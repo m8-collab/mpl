@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mtwapa Premier League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="nav-wrap">
+    <a href="#/" class="brand">
+      <div class="brand-mark">MPL</div>
+      <div class="brand-name">MTWAPA PREMIER LEAGUE<small id="brandSeason">SEASON 2026 &middot; 5TH EDITION</small></div>
+    </a>
+    <button class="nav-toggle" id="navToggle">MENU</button>
+    <nav class="links" id="navLinks">
+      <a href="#/" data-route="/">Home</a>
+      <a href="#/table" data-route="/table">Table</a>
+      <a href="#/fixtures" data-route="/fixtures">Fixtures</a>
+      <a href="#/clubs" data-route="/clubs">Clubs</a>
+      <a href="#/scorers" data-route="/scorers">Scorers</a>
+      <a href="#/news" data-route="/news">News</a>
+      <a href="#/gallery" data-route="/gallery">Gallery</a>
+      <a href="#/predictor" data-route="/predictor">Predictor</a>
+      <a href="#/about" data-route="/about">About</a>
+    </nav>
+  </div>
+  <div class="ticker-bar"><div class="ticker-track" id="tickerTrack"></div></div>
+</header>
+
+<main id="app"></main>
+
+<footer class="site">
+  <div class="footer-inner">
+    <div>
+      <div class="brand-name" style="font-size:.92rem;">MTWAPA PREMIER LEAGUE</div>
+      <p style="margin-top:8px;" id="footerSeason">SEASON 2026 &middot; 26+ CLUBS, ONE TABLE.</p>
+    </div>
+    <p id="footerDisclaimer">TABLE, FIXTURES &amp; TOP SCORERS REFLECT LIVE LEAGUE DATA.</p>
+  </div>
+  <div class="footer-admin"><a href="admin.html">Admin</a></div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/data.js"></script>
+<script src="js/views.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

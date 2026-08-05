@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Mtwapa Premier League</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+<!-- ================= LOGIN SCREEN ================= -->
+<section id="loginScreen" class="admin-login">
+  <form id="loginForm" class="admin-login-card">
+    <div class="brand-mark" style="margin:0 auto 18px;">MPL</div>
+    <h1>Admin Login</h1>
+    <p class="admin-hint">Sign in to manage the Mtwapa Premier League site.</p>
+    <label>Email
+      <input type="email" id="loginEmail" required autocomplete="username">
+    </label>
+    <label>Password
+      <input type="password" id="loginPassword" required autocomplete="current-password">
+    </label>
+    <button type="submit" class="btn solid" style="width:100%;justify-content:center;margin-top:8px;">Sign In</button>
+    <p id="loginError" class="admin-error"></p>
+  </form>
+</section>
+
+<!-- ================= ADMIN DASHBOARD ================= -->
+<div id="dashboard" class="admin-dashboard" style="display:none;">
+
+  <header class="admin-header">
+    <div class="brand" style="display:flex;align-items:center;gap:12px;">
+      <div class="brand-mark">MPL</div>
+      <div class="brand-name">ADMIN<small>MTWAPA PREMIER LEAGUE</small></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="index.html" target="_blank" class="btn">View Site</a>
+      <button id="logoutBtn" class="btn">Log Out</button>
+    </div>
+  </header>
+
+  <nav class="admin-tabs" id="adminTabs">
+    <button data-tab="clubs" class="active">Clubs</button>
+    <button data-tab="table">Table</button>
+    <button data-tab="fixtures">Fixtures</button>
+    <button data-tab="scorers">Scorers</button>
+    <button data-tab="squads">Squads</button>
+    <button data-tab="news">News</button>
+    <button data-tab="gallery">Gallery</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+
+  <main class="admin-main">
+
+    <!-- CLUBS -->
+    <section class="admin-panel" id="panel-clubs">
+      <h2>Clubs</h2>
+      <p class="admin-hint">The club list. The short ID is used internally (e.g. in web links) — lowercase, no spaces, can't be changed after creation.</p>
+      <form id="form-clubs" class="admin-form">
+        <input type="hidden" name="_editing" value="">
+        <div class="admin-form-grid">
+          <label>Short ID<input name="id" placeholder="e.g. travellers" required></label>
+          <label>Club Name<input name="name" placeholder="e.g. Travellers FC" required></label>
+          <label>Home Venue<input name="venue" placeholder="e.g. Kanamai"></label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn solid">Add Club</button>
+          <button type="button" class="btn" data-cancel-edit style="display:none;">Cancel Edit</button>
+        </div>
+      </form>
+      <div class="admin-table-wrap"><table class="admin-table" id="table-clubs"></table></div>
+    </section>
+
+    <!-- TABLE -->
+    <section class="admin-panel" id="panel-table" style="display:none;">
+      <h2>League Table</h2>
+      <p class="admin-hint">Enter each club's played/won/drawn/lost and goals. Points, goal difference and rank are calculated automatically on the live site.</p>
+      <form id="form-table" class="admin-form">
+        <input type="hidden" name="_editing" value="">
+        <div class="admin-form-grid">
+          <label>Club<select name="club_id" required></select></label>
+          <label>P<input name="p" type="number" min="0" value="0" required></label>
+          <label>W<input name="w" type="number" min="0" value="0" required></label>
+          <label>D<input name="d" type="number" min="0" value="0" required></label>
+          <label>L<input name="l" type="number" min="0" value="0" required></label>
+          <label>GF<input name="gf" type="number" min="0" value="0" required></label>
+          <label>GA<input name="ga" type="number" min="0" value="0" required></label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn solid">Save Row</button>
+          <button type="button" class="btn" data-cancel-edit style="display:none;">Cancel Edit</button>
+        </div>
+      </form>
+      <div class="admin-table-wrap"><table class="admin-table" id="table-table"></table></div>
+    </section>
+
+    <!-- FIXTURES -->
+    <section class="admin-panel" id="panel-fixtures" style="display:none;">
+      <h2>Fixtures</h2>
+      <p class="admin-hint">A fixture is automatically shown as "PLAYED" once its date is in the past.</p>
+      <form id="form-fixtures" class="admin-form">
+        <input type="hidden" name="_editing" value="">
+        <div class="admin-form-grid">
+          <label>Match No.<input name="match_no" placeholder="e.g. 150" required></label>
+          <label>Date<input name="date" type="date" required></label>
+          <label>Kickoff<input name="kickoff" placeholder="e.g. 15:00"></label>
+          <label>Home Club<select name="home_id" required></select></label>
+          <label>Away Club<select name="away_id" required></select></label>
+          <label>Venue<input name="venue" placeholder="e.g. KP Mtwapa"></label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn solid">Add Fixture</button>
+          <button type="button" class="btn" data-cancel-edit style="display:none;">Cancel Edit</button>
+        </div>
+      </form>
+      <div class="admin-table-wrap"><table class="admin-table" id="table-fixtures"></table></div>
+    </section>
+
+    <!-- SCORERS -->
+    <section class="admin-panel" id="panel-scorers" style="display:none;">
+      <h2>Golden Boot / Scorers</h2>
+      <form id="form-scorers" class="admin-form">
+        <input type="hidden" name="_editing" value="">
+        <div class="admin-form-grid">
+          <label>Player Name<input name="player_name" required></label>
+          <label>Club<select name="club_id" required></select></label>
+          <label>Goals<input name="goals" type="number" min="0" value="0" required></label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn solid">Add Scorer</button>
+          <button type="button" class="btn" data-cancel-edit style="display:none;">Cancel Edit</button>
+        </div>
+      </form>
+      <div class="admin-table-wrap"><table class="admin-table" id="table-scorers"></table></div>
+    </section>
+
+    <!-- SQUADS -->
+    <section class="admin-panel" id="panel-squads" style="display:none;">
+      <h2>Squads</h2>
+      <p class="admin-hint">Only clubs with players added here will show a squad list on the site.</p>
+      <form id="form-squads" class="admin-form">
+        <input type="hidden" name="_editing" value="">
+        <div class="admin-form-grid">
+          <label>Club<select name="club_id" required></select></label>
+          <label>Player Name<input name="player_name" required></label>
+          <label>Jersey No.<input name="jersey_no" type="number" min="1"></label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn solid">Add Player</button>
+          <button type="button" class="btn" data-cancel-edit style="display:none;">Cancel Edit</button>
+        </div>
+      </form>
+      <div class="admin-table-wrap"><table class="admin-table" id="table-squads"></table></div>
+    </section>
+
+    <!-- NEWS -->
+    <section class="admin-panel" id="panel-news" style="display:none;">
+      <h2>News</h2>
+      <form id="form-news" class="admin-form">
+        <input type="hidden" name="_editing" value="">
+        <div class="admin-form-grid">
+          <label>Tag<input name="tag" placeholder="e.g. League Table"></label>
+          <label style="grid-column:1/-1;">Title<input name="title" required></label>
+          <label style="grid-column:1/-1;">Body<textarea name="body" rows="3"></textarea></label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn solid">Publish</button>
+          <button type="button" class="btn" data-cancel-edit style="display:none;">Cancel Edit</button>
+        </div>
+      </form>
+      <div class="admin-table-wrap"><table class="admin-table" id="table-news"></table></div>
+    </section>
+
+    <!-- GALLERY -->
+    <section class="admin-panel" id="panel-gallery" style="display:none;">
+      <h2>Gallery</h2>
+      <p class="admin-hint">Upload photos — you can select multiple files at once. They appear on the live Gallery page immediately.</p>
+      <form id="form-gallery" class="admin-form">
+        <div class="admin-form-grid">
+          <label style="grid-column:1/-1;">Photos<input type="file" name="files" id="galleryFiles" accept="image/*" multiple required></label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn solid">Upload</button>
+        </div>
+        <p id="galleryUploadStatus" class="admin-hint"></p>
+      </form>
+      <div class="admin-gallery-grid" id="gallery-grid"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="admin-panel" id="panel-settings" style="display:none;">
+      <h2>Site Settings</h2>
+      <form id="form-settings" class="admin-form">
+        <div class="admin-form-grid">
+          <label>Season Label<input name="season_label" placeholder="e.g. Season 2026 — 5th Edition"></label>
+          <label>"As Of" Label<input name="as_of_label" placeholder="e.g. as at August 2026"></label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn solid">Save Settings</button>
+        </div>
+      </form>
+    </section>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

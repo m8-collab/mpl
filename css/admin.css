@@ -1,0 +1,93 @@
+/* ===================== ADMIN PANEL ===================== */
+.admin-body{ min-height:100vh; }
+
+/* ---------- login ---------- */
+.admin-login{
+  min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+}
+.admin-login-card{
+  width:100%; max-width:380px; background:var(--pitch-2); border:1px solid var(--line);
+  padding:36px 30px; text-align:center;
+}
+.admin-login-card h1{ font-size:1.5rem; margin-top:4px; }
+.admin-hint{ color:var(--ivory-dim); font-size:.82rem; margin-top:10px; line-height:1.5; }
+.admin-login-card label{ display:block; text-align:left; margin-top:16px; font-family:'IBM Plex Mono'; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--steel); }
+.admin-login-card input{ width:100%; margin-top:6px; }
+.admin-error{ color:var(--claret-br); font-size:.8rem; margin-top:14px; min-height:1em; }
+
+input, select, textarea{
+  background:var(--pitch); border:1px solid var(--line); color:var(--ivory);
+  padding:10px 12px; font-family:'IBM Plex Sans'; font-size:.9rem; border-radius:2px;
+}
+input:focus, select:focus, textarea:focus{ outline:1px solid var(--gold); border-color:var(--gold); }
+
+/* ---------- dashboard shell ---------- */
+.admin-dashboard{ min-height:100vh; }
+.admin-header{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:16px 28px; border-bottom:1px solid var(--line); background:var(--pitch-2);
+}
+.admin-header .brand-name{ font-family:'Oswald'; font-weight:600; letter-spacing:.04em; }
+.admin-header .brand-name small{ display:block; font-family:'IBM Plex Mono'; font-size:.6rem; color:var(--steel); letter-spacing:.08em; }
+
+.admin-tabs{
+  display:flex; gap:2px; flex-wrap:wrap; padding:0 28px; background:var(--pitch-2); border-bottom:1px solid var(--line);
+}
+.admin-tabs button{
+  background:transparent; border:none; color:var(--ivory-dim);
+  padding:14px 18px; font-family:'IBM Plex Mono'; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase;
+  border-bottom:2px solid transparent;
+}
+.admin-tabs button.active{ color:var(--gold); border-bottom-color:var(--gold); }
+.admin-tabs button:hover{ color:var(--ivory); }
+
+.admin-main{ max-width:1180px; margin:0 auto; padding:32px 28px 80px; }
+.admin-panel h2{ font-size:1.5rem; }
+
+/* ---------- forms ---------- */
+.admin-form{ margin-top:18px; background:var(--pitch-2); border:1px solid var(--line); padding:20px; }
+.admin-form-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:14px; }
+.admin-form-grid label{
+  display:flex; flex-direction:column; gap:6px;
+  font-family:'IBM Plex Mono'; font-size:.66rem; letter-spacing:.07em; text-transform:uppercase; color:var(--steel);
+}
+.admin-form-actions{ display:flex; gap:12px; margin-top:16px; }
+
+/* ---------- tables ---------- */
+.admin-table-wrap{ margin-top:22px; overflow-x:auto; }
+table.admin-table{ width:100%; border-collapse:collapse; font-size:.85rem; min-width:520px; }
+table.admin-table th{
+  text-align:left; font-family:'IBM Plex Mono'; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--steel); padding:10px 12px; border-bottom:1px solid var(--line);
+}
+table.admin-table td{ padding:10px 12px; border-bottom:1px solid var(--line); color:var(--ivory); }
+table.admin-table tr:hover td{ background:rgba(240,236,224,0.03); }
+table.admin-table .row-actions{ display:flex; gap:8px; white-space:nowrap; }
+table.admin-table .row-actions button{
+  background:transparent; border:1px solid var(--line); color:var(--ivory-dim);
+  font-family:'IBM Plex Mono'; font-size:.62rem; letter-spacing:.05em; text-transform:uppercase; padding:5px 10px; border-radius:2px;
+}
+table.admin-table .row-actions button:hover{ border-color:var(--gold); color:var(--gold); }
+table.admin-table .row-actions button.danger:hover{ border-color:var(--claret-br); color:var(--claret-br); }
+
+/* ---------- gallery grid ---------- */
+.admin-gallery-grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-top:24px;
+}
+.admin-gallery-item{ position:relative; border:1px solid var(--line); background:var(--pitch-2); }
+.admin-gallery-item img{ width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
+.admin-gallery-item input{
+  width:100%; border:none; border-top:1px solid var(--line); background:var(--pitch-2);
+  font-size:.72rem; padding:8px; border-radius:0;
+}
+.admin-gallery-item button.danger{
+  position:absolute; top:6px; right:6px; background:rgba(18,42,32,0.85); border:1px solid var(--line);
+  color:var(--ivory); width:26px; height:26px; border-radius:50%; font-size:.9rem; line-height:1;
+}
+.admin-gallery-item button.danger:hover{ border-color:var(--claret-br); color:var(--claret-br); }
+
+@media(max-width:640px){
+  .admin-header{ padding:14px 16px; flex-wrap:wrap; gap:10px; }
+  .admin-tabs{ padding:0 16px; overflow-x:auto; }
+  .admin-main{ padding:24px 16px 60px; }
+}
