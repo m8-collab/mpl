@@ -137,7 +137,6 @@ const routes = {
   '/news': viewNews,
   '/gallery': viewGallery,
   '/predictor': viewPredictor,
-  '/about': viewAbout,
 };
 
 function render(){
@@ -173,6 +172,8 @@ function updateChrome(){
 
 function buildTicker(){
   const track = document.getElementById('tickerTrack');
+  // Use the real table's current leaders + upcoming fixtures for the ticker,
+  // since individual historical scorelines weren't published.
   const leaders = TABLE.slice(0,6);
   const items = leaders.map(r=>`
     <span class="tick-item"><b>${r.rank}. ${CLUB_MAP[r.id].name}</b> ${r.pts} PTS <span class="fin">${r.w}W ${r.d}D ${r.l}L</span></span>`).join('');
@@ -180,8 +181,12 @@ function buildTicker(){
 }
 
 /* ===================== LIVE UPDATES ===================== */
+/* Whenever the admin adds/edits/deletes anything, Supabase pushes a
+   realtime notification here and the whole site quietly refreshes —
+   no page reload needed, for every visitor currently on the site. */
 let liveReloadTimer = null;
 function scheduleLiveReload(){
+  // Debounce: if several edits land in the same moment, only refetch once.
   clearTimeout(liveReloadTimer);
   liveReloadTimer = setTimeout(async ()=>{
     try{
