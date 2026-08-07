@@ -47,6 +47,7 @@ input:focus, select:focus, textarea:focus{ outline:1px solid var(--gold); border
 
 .admin-main{ max-width:1180px; margin:0 auto; padding:32px 28px 80px; }
 .admin-panel h2{ font-size:1.5rem; }
+.admin-subhead{ font-family:'Oswald'; font-weight:600; font-size:1.05rem; color:var(--gold); border-top:1px solid var(--line); padding-top:24px; }
 
 /* ---------- forms ---------- */
 .admin-form{ margin-top:18px; background:var(--pitch-2); border:1px solid var(--line); padding:20px; }
@@ -80,7 +81,7 @@ table.admin-table .row-actions button.danger:hover{ border-color:var(--claret-br
 }
 .admin-gallery-item{ position:relative; border:1px solid var(--line); background:var(--pitch-2); }
 .admin-gallery-item img{ width:100%; aspect-ratio:1/1; object-fit:cover; display:block; }
-.admin-gallery-item input{
+.admin-gallery-item input, .admin-gallery-item select{
   width:100%; border:none; border-top:1px solid var(--line); background:var(--pitch-2);
   font-size:.72rem; padding:8px; border-radius:0;
 }

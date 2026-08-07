@@ -128,3 +128,28 @@ that becomes a problem, Supabase's docs explain how to connect your
 own SMTP provider (Authentication → Emails → SMTP Settings) — not
 needed to get started, just worth knowing about later.
 
+## Gallery albums (photo folders)
+
+The Gallery is now organized into albums (folders) by event/matchday,
+instead of one long flat list of photos.
+
+1. **SQL Editor → New query**, paste in the entire contents of
+   `supabase/gallery-albums.sql`, and click **Run**. This adds the
+   albums table and automatically creates a starter "Matchday Photos"
+   album containing any photos you'd already uploaded, so nothing
+   disappears.
+2. In `admin.html` → **Gallery** tab, you'll now see an **Albums**
+   section — add an album (e.g. "Season Opener", "Mikanjuni vs Bahari
+   United") before uploading photos into it.
+3. When uploading, pick the album from the dropdown first.
+4. Existing photos can be moved between albums anytime — each photo in
+   the "All Photos" section has its own album dropdown.
+5. On the public site, the Gallery page now shows album folders first;
+   clicking one opens that album's photos with the same tap-to-enlarge
+   viewer as before.
+
+Albums with no photos in them are hidden from the public site
+automatically (so an empty album you're still filling up won't show
+as a dead folder to visitors) — they still show in admin so you can
+keep adding to them.
+

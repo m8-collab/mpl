@@ -95,12 +95,13 @@ function initGallery(){
   const img = document.getElementById('lightboxImg');
   const tiles = Array.from(document.querySelectorAll('.photo-tile'));
   if(!lightbox || !tiles.length) return;
+  const photos = window.__currentAlbumPhotos || GALLERY_PHOTOS;
   let current = 0;
 
   function open(i){
     current = i;
-    img.src = GALLERY_PHOTOS[current].src;
-    img.alt = GALLERY_PHOTOS[current].cap;
+    img.src = photos[current].src;
+    img.alt = photos[current].cap;
     lightbox.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -109,9 +110,9 @@ function initGallery(){
     document.body.style.overflow = '';
   }
   function step(delta){
-    current = (current + delta + GALLERY_PHOTOS.length) % GALLERY_PHOTOS.length;
-    img.src = GALLERY_PHOTOS[current].src;
-    img.alt = GALLERY_PHOTOS[current].cap;
+    current = (current + delta + photos.length) % photos.length;
+    img.src = photos[current].src;
+    img.alt = photos[current].cap;
   }
 
   tiles.forEach(t=>t.addEventListener('click', ()=>open(Number(t.dataset.index))));
@@ -145,12 +146,16 @@ function render(){
   const app = document.getElementById('app');
 
   document.querySelectorAll('nav.links a').forEach(a=>{
-    a.classList.toggle('active', a.getAttribute('href') === '#'+(hash.startsWith('/club/') ? '/clubs' : hash));
+    const navTarget = hash.startsWith('/club/') ? '/clubs' : (hash.startsWith('/gallery/') ? '/gallery' : hash);
+    a.classList.toggle('active', a.getAttribute('href') === '#'+navTarget);
   });
 
   if(hash.startsWith('/club/')){
     const id = hash.split('/')[2];
     app.innerHTML = viewClubDetail(id);
+  } else if(hash.startsWith('/gallery/')){
+    const id = hash.split('/')[2];
+    app.innerHTML = viewGalleryAlbum(id);
   } else if(routes[hash]){
     app.innerHTML = routes[hash]();
   } else {
@@ -160,7 +165,7 @@ function render(){
   window.scrollTo({top:0, behavior:'instant'});
 
   if(hash === '/predictor'){ renderPickList(); }
-  if(hash === '/gallery'){ initGallery(); }
+  if(hash.startsWith('/gallery/')){ initGallery(); }
 
   document.getElementById('navLinks').classList.remove('open');
 }

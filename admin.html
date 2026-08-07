@@ -253,9 +253,27 @@
     <!-- GALLERY -->
     <section class="admin-panel" id="panel-gallery" style="display:none;">
       <h2>Gallery</h2>
-      <p class="admin-hint">Upload photos — you can select multiple files at once. They appear on the live Gallery page immediately.</p>
+      <p class="admin-hint">Photos are organized into albums (folders) by event or matchday — visitors browse folders on the public Gallery page.</p>
+
+      <h3 class="admin-subhead">Albums</h3>
+      <form id="form-albums" class="admin-form">
+        <input type="hidden" name="_editing" value="">
+        <div class="admin-form-grid">
+          <label>Album Name<input name="name" placeholder="e.g. Mikanjuni vs Bahari United" required></label>
+          <label>Description<input name="description" placeholder="Optional short description"></label>
+        </div>
+        <div class="admin-form-actions">
+          <button type="submit" class="btn solid">Add Album</button>
+          <button type="button" class="btn" data-cancel-edit style="display:none;">Cancel Edit</button>
+        </div>
+      </form>
+      <div class="admin-table-wrap"><table class="admin-table" id="table-albums"></table></div>
+
+      <h3 class="admin-subhead" style="margin-top:36px;">Upload Photos</h3>
+      <p class="admin-hint">Choose which album these photos belong to, then select the files.</p>
       <form id="form-gallery" class="admin-form">
         <div class="admin-form-grid">
+          <label>Album<select name="album_id" id="uploadAlbumSelect" required></select></label>
           <label style="grid-column:1/-1;">Photos<input type="file" name="files" id="galleryFiles" accept="image/*" multiple required></label>
         </div>
         <div class="admin-form-actions">
@@ -263,6 +281,8 @@
         </div>
         <p id="galleryUploadStatus" class="admin-hint"></p>
       </form>
+
+      <h3 class="admin-subhead" style="margin-top:36px;">All Photos</h3>
       <div class="admin-gallery-grid" id="gallery-grid"></div>
     </section>
 

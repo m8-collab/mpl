@@ -23,6 +23,8 @@ let FIXTURES = [];
 let SQUADS_MAP = {};
 let NEWS = [];
 let GALLERY_PHOTOS = [];
+let ALBUMS = [];          // [{id, name, description, cover, count}]
+let PHOTOS_BY_ALBUM = {}; // { [albumId]: [{id, src, cap}] }
 
 /* ---------- helpers used by views.js / main.js ---------- */
 const PALETTE = ['#c94a2f','#3a5fc9','#2f8c5a','#e3a930','#7a4fc9','#1f6e8c','#b5232f','#4fa8c9',
@@ -61,6 +63,11 @@ function generateSquad(clubId){
   return list;
 }
 
+function esc(s){
+  if(s===null || s===undefined) return '';
+  return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
 /* ---------- fetch + compute everything from Supabase ---------- */
 async function loadAllData(){
   const [
@@ -72,6 +79,7 @@ async function loadAllData(){
     { data: newsData, error: e6 },
     { data: galleryData, error: e7 },
     { data: settingsData, error: e8 },
+    { data: albumsData, error: e9 },
   ] = await Promise.all([
     db.from('clubs').select('*'),
     db.from('table_rows').select('*'),
@@ -81,6 +89,7 @@ async function loadAllData(){
     db.from('news').select('*').order('created_at', { ascending:false }),
     db.from('gallery').select('*').order('sort_order').order('created_at'),
     db.from('settings').select('*').eq('id',1).single(),
+    db.from('albums').select('*').order('sort_order').order('created_at'),
   ]);
 
   const firstError = e1||e2||e3||e4||e5||e6||e7||e8;
@@ -88,6 +97,10 @@ async function loadAllData(){
     console.error('Supabase load error:', firstError);
     throw firstError;
   }
+  // e9 (albums) is allowed to fail quietly — if the gallery-albums.sql
+  // migration hasn't been run yet, the site still works, just with an
+  // empty albums list instead of erroring the whole page out.
+  if(e9) console.warn('Albums not loaded (has supabase/gallery-albums.sql been run yet?)', e9);
 
   // Settings
   SEASON_LABEL = (settingsData && settingsData.season_label) || 'Mtwapa Premier League';
@@ -139,6 +152,27 @@ async function loadAllData(){
   // News
   NEWS = (newsData || []).map(n=>({ tag:n.tag, title:n.title, body:n.body }));
 
-  // Gallery
+  // Gallery — flat list (kept for backward compatibility) + grouped by album
   GALLERY_PHOTOS = (galleryData || []).map(g=>({ src:g.url, cap:g.caption || '' }));
+
+  const albumsRaw = albumsData || [];
+  const photosRaw = galleryData || [];
+
+  PHOTOS_BY_ALBUM = {};
+  photosRaw.forEach(g=>{
+    const key = g.album_id || 'none';
+    if(!PHOTOS_BY_ALBUM[key]) PHOTOS_BY_ALBUM[key] = [];
+    PHOTOS_BY_ALBUM[key].push({ id:g.id, src:g.url, cap:g.caption || '' });
+  });
+
+  ALBUMS = albumsRaw.map(a=>{
+    const photos = PHOTOS_BY_ALBUM[a.id] || [];
+    return {
+      id: a.id,
+      name: a.name,
+      description: a.description || '',
+      count: photos.length,
+      cover: photos[0] ? photos[0].src : null,
+    };
+  }).filter(a=>a.count > 0); // hide empty albums on the public site
 }

@@ -237,6 +237,37 @@ img{max-width:100%;display:block;}
   .about-contact-grid{ grid-template-columns:1fr; gap:20px; }
 }
 
+/* ---------- GALLERY ALBUMS (folders) ---------- */
+.album-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(220px,1fr));
+  gap:20px;
+}
+.album-tile{
+  display:block; border:1px solid var(--line); background:var(--pitch-2);
+  overflow:hidden; border-radius:2px; text-decoration:none; transition:border-color .2s;
+}
+.album-tile:hover{ border-color:var(--gold); }
+.album-cover{
+  aspect-ratio:4/3; background-size:cover; background-position:center;
+  background-color:var(--pitch); display:flex; align-items:center; justify-content:center;
+  position:relative;
+}
+.album-cover::after{
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(180deg, transparent 55%, rgba(9,18,14,0.75) 100%);
+}
+.album-folder-icon{ font-size:2.2rem; opacity:.85; position:relative; z-index:1; filter:grayscale(1) brightness(1.6); }
+.album-cover[style*="background-image"] .album-folder-icon{ display:none; }
+.album-meta{ padding:14px 16px; }
+.album-name{ font-family:'Oswald'; font-weight:600; letter-spacing:.02em; color:var(--ivory); font-size:1.02rem; }
+.album-count{ font-family:'IBM Plex Mono'; font-size:.7rem; color:var(--steel); margin-top:4px; letter-spacing:.05em; }
+.album-back{
+  display:inline-block; font-family:'IBM Plex Mono'; font-size:.72rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--steel);
+}
+.album-back:hover{ color:var(--gold); }
+
 /* ---------- MATCHDAY PHOTO GALLERY ---------- */
 .photo-grid{
   display:grid;

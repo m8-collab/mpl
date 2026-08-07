@@ -319,14 +319,43 @@ function viewGallery(){
   <section style="padding-top:44px;border-bottom:none;">
     <div class="eyebrow">AROUND THE GROUNDS</div>
     <h2 style="margin-top:6px;font-size:2.1rem;">Matchday Gallery</h2>
-    <p style="color:var(--ivory-dim);max-width:60ch;margin-top:10px;">Real photos from Mtwapa Premier League matchdays — squads, kits and the pitch on gameday. Tap any photo to view it larger.</p>
-    ${GALLERY_PHOTOS.length ? `
+    <p style="color:var(--ivory-dim);max-width:60ch;margin-top:10px;">Photos grouped by event and matchday. Open a folder to browse.</p>
+    ${ALBUMS.length ? `
+    <div class="album-grid" style="margin-top:26px;">
+      ${ALBUMS.map(a=>`
+        <a href="#/gallery/${a.id}" class="album-tile">
+          <div class="album-cover" style="${a.cover ? `background-image:url('${a.cover}')` : ''}">
+            <span class="album-folder-icon">&#128193;</span>
+          </div>
+          <div class="album-meta">
+            <div class="album-name">${esc(a.name)}</div>
+            <div class="album-count">${a.count} photo${a.count===1?'':'s'}</div>
+          </div>
+        </a>`).join('')}
+    </div>` : `<p style="color:var(--ivory-dim);margin-top:26px;">No photo albums yet — check back after the next matchday.</p>`}
+  </section>
+  `;
+}
+
+function viewGalleryAlbum(albumId){
+  const album = ALBUMS.find(a=>String(a.id)===String(albumId));
+  const photos = PHOTOS_BY_ALBUM[albumId] || [];
+  // used by initGallery() for the lightbox — keep it scoped to this album
+  window.__currentAlbumPhotos = photos;
+
+  return `
+  <section style="padding-top:44px;border-bottom:none;">
+    <a href="#/gallery" class="album-back">&#8249; All Albums</a>
+    <div class="eyebrow" style="margin-top:18px;">AROUND THE GROUNDS</div>
+    <h2 style="margin-top:6px;font-size:2.1rem;">${esc(album ? album.name : 'Album')}</h2>
+    ${album && album.description ? `<p style="color:var(--ivory-dim);max-width:60ch;margin-top:10px;">${esc(album.description)}</p>` : ''}
+    ${photos.length ? `
     <div class="photo-grid" style="margin-top:26px;">
-      ${GALLERY_PHOTOS.map((p,i)=>`
+      ${photos.map((p,i)=>`
         <button type="button" class="photo-tile" data-index="${i}">
-          <img src="${p.src}" alt="${p.cap}" loading="lazy">
+          <img src="${p.src}" alt="${esc(p.cap)}" loading="lazy">
         </button>`).join('')}
-    </div>` : `<p style="color:var(--ivory-dim);margin-top:26px;">No photos yet — check back after the next matchday.</p>`}
+    </div>` : `<p style="color:var(--ivory-dim);margin-top:26px;">No photos in this album yet.</p>`}
   </section>
 
   <div class="lightbox" id="lightbox">

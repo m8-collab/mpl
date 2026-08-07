@@ -7,6 +7,7 @@
 ===================================================================== */
 
 let clubsCache = []; // [{id, name, venue}], used to populate <select> dropdowns
+let albumsCache = []; // [{id, name, description}], used for gallery album dropdowns
 
 /* ---------- small helpers ---------- */
 function $(sel, root=document){ return root.querySelector(sel); }
@@ -206,7 +207,7 @@ function initDashboard(){
   loadScorers();
   loadSquads();
   loadNews();
-  loadGallery();
+  loadAlbums().then(loadGallery);
   loadSettings();
   loadAdmins();
 
@@ -216,6 +217,7 @@ function initDashboard(){
   setupForm('scorers', {selectDeps:['club_id']});
   setupForm('squads', {selectDeps:['club_id']});
   setupForm('news');
+  setupForm('albums');
   setupSettingsForm();
   setupGalleryUpload();
 }
@@ -223,8 +225,8 @@ function initDashboard(){
 /* =====================================================================
    GENERIC FORM (insert / update) WIRING
 ===================================================================== */
-const TABLE_NAMES = { clubs:'clubs', table:'table_rows', fixtures:'fixtures', scorers:'scorers', squads:'squads', news:'news' };
-const PRIMARY_KEY = { clubs:'id', table:'club_id', fixtures:'id', scorers:'id', squads:'id', news:'id' };
+const TABLE_NAMES = { clubs:'clubs', table:'table_rows', fixtures:'fixtures', scorers:'scorers', squads:'squads', news:'news', albums:'albums' };
+const PRIMARY_KEY = { clubs:'id', table:'club_id', fixtures:'id', scorers:'id', squads:'id', news:'id', albums:'id' };
 
 function setupForm(key){
   const form = $('#form-'+key);
@@ -272,6 +274,7 @@ function setupForm(key){
     if(key === 'scorers') loadScorers();
     if(key === 'squads') loadSquads();
     if(key === 'news') loadNews();
+    if(key === 'albums') await loadAlbums();
   });
 
   cancelBtn.addEventListener('click', ()=>{
@@ -283,7 +286,7 @@ function setupForm(key){
 }
 
 function defaultSubmitLabel(key){
-  return { clubs:'Add Club', table:'Save Row', fixtures:'Add Fixture', scorers:'Add Scorer', squads:'Add Player', news:'Publish' }[key];
+  return { clubs:'Add Club', table:'Save Row', fixtures:'Add Fixture', scorers:'Add Scorer', squads:'Add Player', news:'Publish', albums:'Add Album' }[key];
 }
 
 function startEdit(key, row){
@@ -308,6 +311,7 @@ async function deleteRow(key, id){
   if(key === 'scorers') loadScorers();
   if(key === 'squads') loadSquads();
   if(key === 'news') loadNews();
+  if(key === 'albums'){ await loadAlbums(); loadGallery(); }
 }
 
 /* =====================================================================
@@ -481,12 +485,39 @@ async function loadNews(){
 /* =====================================================================
    GALLERY (Supabase Storage + gallery table)
 ===================================================================== */
+async function loadAlbums(){
+  const { data, error } = await db.from('albums').select('*').order('sort_order').order('created_at');
+  if(error){ console.error(error); return; }
+  albumsCache = data || [];
+
+  const sel = $('#uploadAlbumSelect');
+  const current = sel.value;
+  sel.innerHTML = albumsCache.map(a=>`<option value="${a.id}" ${String(a.id)===current?'selected':''}>${esc(a.name)}</option>`).join('')
+    || `<option value="">Add an album first…</option>`;
+
+  const tbl = $('#table-albums');
+  tbl.innerHTML = `
+    <tr><th>Name</th><th>Description</th><th></th></tr>
+    ${albumsCache.map(a=>`
+      <tr>
+        <td>${esc(a.name)}</td>
+        <td>${esc(a.description||'—')}</td>
+        <td class="row-actions">
+          <button data-edit>Edit</button>
+          <button data-del class="danger">Delete</button>
+        </td>
+      </tr>`).join('')}`;
+  wireRowButtons('#table-albums', albumsCache, 'albums');
+}
+
 function setupGalleryUpload(){
   $('#form-gallery').addEventListener('submit', async (e)=>{
     e.preventDefault();
     const input = $('#galleryFiles');
+    const albumId = $('#uploadAlbumSelect').value;
     const files = Array.from(input.files || []);
     if(!files.length) return;
+    if(!albumId){ alert('Add an album first, then select it here.'); return; }
     const status = $('#galleryUploadStatus');
 
     let done = 0;
@@ -497,13 +528,18 @@ function setupGalleryUpload(){
       const { error: upErr } = await db.storage.from('gallery').upload(path, file);
       if(upErr){ alert('Upload failed for ' + file.name + ': ' + upErr.message); continue; }
       const { data: pub } = db.storage.from('gallery').getPublicUrl(path);
-      await db.from('gallery').insert({ url: pub.publicUrl, caption: '' });
+      await db.from('gallery').insert({ url: pub.publicUrl, caption: '', album_id: albumId });
       done++;
     }
     status.textContent = `Done — uploaded ${done} of ${files.length} photo(s).`;
     input.value = '';
     loadGallery();
   });
+}
+
+function albumOptionsHtml(selectedId){
+  return `<option value="">Unassigned</option>` + albumsCache.map(a=>
+    `<option value="${a.id}" ${String(a.id)===String(selectedId)?'selected':''}>${esc(a.name)}</option>`).join('');
 }
 
 async function loadGallery(){
@@ -516,6 +552,7 @@ async function loadGallery(){
     <div class="admin-gallery-item" data-id="${g.id}">
       <img src="${esc(g.url)}" alt="">
       <button type="button" class="danger" data-del-photo title="Delete photo">&times;</button>
+      <select data-album>${albumOptionsHtml(g.album_id)}</select>
       <input type="text" placeholder="Caption…" value="${esc(g.caption||'')}" data-caption>
     </div>`).join('') || `<p class="admin-hint">No photos yet — upload some above.</p>`;
 
@@ -527,6 +564,9 @@ async function loadGallery(){
       await db.storage.from('gallery').remove([path]);
       await db.from('gallery').delete().eq('id', row.id);
       loadGallery();
+    });
+    el.querySelector('[data-album]').addEventListener('change', async (e)=>{
+      await db.from('gallery').update({ album_id: e.target.value || null }).eq('id', row.id);
     });
     let saveTimer;
     el.querySelector('[data-caption]').addEventListener('input', (e)=>{
