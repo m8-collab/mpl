@@ -1,14 +1,7 @@
-/* =====================================================================
-   ADMIN PANEL LOGIC
-   Handles login, tab switching, and CRUD for every table. Writes only
-   succeed if the visitor is logged in as the admin (enforced by the
-   Row Level Security policies in supabase/schema.sql — this file does
-   not need to "trust" the client, the database checks it too).
-===================================================================== */
 
-let clubsCache = []; // [{id, name, venue}], used to populate <select> dropdowns
 
-/* ---------- small helpers ---------- */
+let clubsCache = []; 
+
 function $(sel, root=document){ return root.querySelector(sel); }
 function $all(sel, root=document){ return Array.from(root.querySelectorAll(sel)); }
 function esc(s){
@@ -24,9 +17,7 @@ function clubName(id){
   return c ? c.name : id;
 }
 
-/* =====================================================================
-   AUTH
-===================================================================== */
+
 async function checkAuth(){
   const { data:{ session } } = await supabase.auth.getSession();
   if(session){
@@ -59,9 +50,6 @@ $('#logoutBtn').addEventListener('click', async ()=>{
   checkAuth();
 });
 
-/* =====================================================================
-   TABS
-===================================================================== */
 let dashboardInited = false;
 function initDashboard(){
   $all('.admin-tabs button').forEach(btn=>{
@@ -95,9 +83,7 @@ function initDashboard(){
   setupGalleryUpload();
 }
 
-/* =====================================================================
-   GENERIC FORM (insert / update) WIRING
-===================================================================== */
+
 const TABLE_NAMES = { clubs:'clubs', table:'table_rows', fixtures:'fixtures', scorers:'scorers', squads:'squads', news:'news' };
 const PRIMARY_KEY = { clubs:'id', table:'club_id', fixtures:'id', scorers:'id', squads:'id', news:'id' };
 
@@ -114,7 +100,7 @@ function setupForm(key){
       if(k === '_editing') continue;
       payload[k] = v === '' ? null : v;
     }
-    // numeric coercion
+    
     ['p','w','d','l','gf','ga','goals','jersey_no'].forEach(f=>{
       if(f in payload && payload[f] !== null) payload[f] = Number(payload[f]);
     });
@@ -123,7 +109,7 @@ function setupForm(key){
     let error;
     if(editingId){
       if(key === 'clubs'){
-        // id is the primary key and shouldn't change on edit
+       
         delete payload.id;
       }
       ({ error } = await supabase.from(table).update(payload).eq(PRIMARY_KEY[key], editingId));
@@ -185,11 +171,9 @@ async function deleteRow(key, id){
   if(key === 'news') loadNews();
 }
 
-/* =====================================================================
-   CLUBS
-===================================================================== */
+
 async function loadClubs(){
-  const { data, error } = await supabase.from('clubs').select('*').order('name');
+  const { data, error } = await supabaseClient.from('clubs').select('*').order('name');
   if(error){ console.error(error); return; }
   clubsCache = data || [];
 
@@ -227,9 +211,7 @@ function wireRowButtons(tableSel, rows, key){
   });
 }
 
-/* =====================================================================
-   TABLE ROWS
-===================================================================== */
+
 async function loadTableRows(){
   const { data, error } = await supabase.from('table_rows').select('*');
   if(error){ console.error(error); return; }
@@ -253,9 +235,7 @@ async function loadTableRows(){
   wireRowButtons('#table-table', rows, 'table');
 }
 
-/* =====================================================================
-   FIXTURES
-===================================================================== */
+
 async function loadFixtures(){
   const { data, error } = await supabase.from('fixtures').select('*').order('date').order('match_no');
   if(error){ console.error(error); return; }
@@ -282,7 +262,7 @@ async function loadFixtures(){
   wireRowButtons('#table-fixtures', rows, 'fixtures');
 }
 
-/* =====================================================================
+
    SCORERS
 ===================================================================== */
 async function loadScorers(){
@@ -306,9 +286,6 @@ async function loadScorers(){
   wireRowButtons('#table-scorers', rows, 'scorers');
 }
 
-/* =====================================================================
-   SQUADS
-===================================================================== */
 async function loadSquads(){
   const { data, error } = await supabase.from('squads').select('*').order('club_id').order('jersey_no');
   if(error){ console.error(error); return; }
@@ -330,9 +307,7 @@ async function loadSquads(){
   wireRowButtons('#table-squads', rows, 'squads');
 }
 
-/* =====================================================================
-   NEWS
-===================================================================== */
+
 async function loadNews(){
   const { data, error } = await supabase.from('news').select('*').order('created_at', { ascending:false });
   if(error){ console.error(error); return; }
@@ -353,9 +328,7 @@ async function loadNews(){
   wireRowButtons('#table-news', rows, 'news');
 }
 
-/* =====================================================================
-   GALLERY (Supabase Storage + gallery table)
-===================================================================== */
+
 function setupGalleryUpload(){
   $('#form-gallery').addEventListener('submit', async (e)=>{
     e.preventDefault();
@@ -413,9 +386,7 @@ async function loadGallery(){
   });
 }
 
-/* =====================================================================
-   SETTINGS
-===================================================================== */
+
 async function loadSettings(){
   const { data, error } = await supabase.from('settings').select('*').eq('id',1).single();
   if(error){ console.error(error); return; }
@@ -437,7 +408,5 @@ function setupSettingsForm(){
   });
 }
 
-/* =====================================================================
-   INIT
-===================================================================== */
+
 checkAuth();
