@@ -26,7 +26,81 @@
     </label>
     <button type="submit" class="btn solid" style="width:100%;justify-content:center;margin-top:8px;">Sign In</button>
     <p id="loginError" class="admin-error"></p>
+    <div class="admin-auth-links">
+      <a href="#" id="showRegister">Create an account</a>
+      <a href="#" id="showForgot">Forgot password?</a>
+    </div>
   </form>
+</section>
+
+<!-- ================= REGISTER SCREEN ================= -->
+<section id="registerScreen" class="admin-login" style="display:none;">
+  <form id="registerForm" class="admin-login-card">
+    <div class="brand-mark" style="margin:0 auto 18px;">MPL</div>
+    <h1>Create Admin Account</h1>
+    <p class="admin-hint">Your account will be created, but you won't be able to change anything on the site until an existing admin approves you.</p>
+    <label>Email
+      <input type="email" id="registerEmail" required autocomplete="username">
+    </label>
+    <label>Password
+      <input type="password" id="registerPassword" required autocomplete="new-password" minlength="6">
+    </label>
+    <label>Confirm Password
+      <input type="password" id="registerPasswordConfirm" required autocomplete="new-password" minlength="6">
+    </label>
+    <button type="submit" class="btn solid" style="width:100%;justify-content:center;margin-top:8px;">Register</button>
+    <p id="registerError" class="admin-error"></p>
+    <p id="registerSuccess" class="admin-success"></p>
+    <div class="admin-auth-links">
+      <a href="#" id="showLoginFromRegister">Back to login</a>
+    </div>
+  </form>
+</section>
+
+<!-- ================= FORGOT PASSWORD SCREEN ================= -->
+<section id="forgotScreen" class="admin-login" style="display:none;">
+  <form id="forgotForm" class="admin-login-card">
+    <div class="brand-mark" style="margin:0 auto 18px;">MPL</div>
+    <h1>Reset Password</h1>
+    <p class="admin-hint">Enter your email and we'll send you a link to set a new password.</p>
+    <label>Email
+      <input type="email" id="forgotEmail" required autocomplete="username">
+    </label>
+    <button type="submit" class="btn solid" style="width:100%;justify-content:center;margin-top:8px;">Send Reset Link</button>
+    <p id="forgotError" class="admin-error"></p>
+    <p id="forgotSuccess" class="admin-success"></p>
+    <div class="admin-auth-links">
+      <a href="#" id="showLoginFromForgot">Back to login</a>
+    </div>
+  </form>
+</section>
+
+<!-- ================= SET NEW PASSWORD SCREEN (arrived via email link) ================= -->
+<section id="resetScreen" class="admin-login" style="display:none;">
+  <form id="resetForm" class="admin-login-card">
+    <div class="brand-mark" style="margin:0 auto 18px;">MPL</div>
+    <h1>Set New Password</h1>
+    <p class="admin-hint">Choose a new password for your account.</p>
+    <label>New Password
+      <input type="password" id="resetPassword" required autocomplete="new-password" minlength="6">
+    </label>
+    <label>Confirm New Password
+      <input type="password" id="resetPasswordConfirm" required autocomplete="new-password" minlength="6">
+    </label>
+    <button type="submit" class="btn solid" style="width:100%;justify-content:center;margin-top:8px;">Set Password</button>
+    <p id="resetError" class="admin-error"></p>
+    <p id="resetSuccess" class="admin-success"></p>
+  </form>
+</section>
+
+<!-- ================= PENDING APPROVAL SCREEN ================= -->
+<section id="pendingScreen" class="admin-login" style="display:none;">
+  <div class="admin-login-card">
+    <div class="brand-mark" style="margin:0 auto 18px;">MPL</div>
+    <h1>Awaiting Approval</h1>
+    <p class="admin-hint">Your account has been created, but an existing admin still needs to approve it before you can manage the site. Check back soon, or ask another admin to approve you from their Admins tab.</p>
+    <button type="button" id="pendingLogout" class="btn" style="width:100%;justify-content:center;margin-top:16px;">Log Out</button>
+  </div>
 </section>
 
 <!-- ================= ADMIN DASHBOARD ================= -->
@@ -51,6 +125,7 @@
     <button data-tab="squads">Squads</button>
     <button data-tab="news">News</button>
     <button data-tab="gallery">Gallery</button>
+    <button data-tab="admins">Admins</button>
     <button data-tab="settings">Settings</button>
   </nav>
 
@@ -189,6 +264,13 @@
         <p id="galleryUploadStatus" class="admin-hint"></p>
       </form>
       <div class="admin-gallery-grid" id="gallery-grid"></div>
+    </section>
+
+    <!-- ADMINS -->
+    <section class="admin-panel" id="panel-admins" style="display:none;">
+      <h2>Admins</h2>
+      <p class="admin-hint">Anyone who registers on the login page shows up here as Pending until you approve them. Only approved admins can edit the site.</p>
+      <div class="admin-table-wrap"><table class="admin-table" id="table-admins"></table></div>
     </section>
 
     <!-- SETTINGS -->

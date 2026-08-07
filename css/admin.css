@@ -14,6 +14,10 @@
 .admin-login-card label{ display:block; text-align:left; margin-top:16px; font-family:'IBM Plex Mono'; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:var(--steel); }
 .admin-login-card input{ width:100%; margin-top:6px; }
 .admin-error{ color:var(--claret-br); font-size:.8rem; margin-top:14px; min-height:1em; }
+.admin-success{ color:#4fa87c; font-size:.8rem; margin-top:10px; line-height:1.5; }
+.admin-auth-links{ display:flex; justify-content:space-between; margin-top:18px; }
+.admin-auth-links a{ font-family:'IBM Plex Mono'; font-size:.68rem; letter-spacing:.05em; color:var(--steel); text-transform:uppercase; }
+.admin-auth-links a:hover{ color:var(--gold); }
 
 input, select, textarea{
   background:var(--pitch); border:1px solid var(--line); color:var(--ivory);

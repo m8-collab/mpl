@@ -96,3 +96,35 @@ Realtime).
 - Free Supabase projects pause after a week of no API activity — the
   first request after a pause takes a few extra seconds to wake back
   up, then it's normal.
+
+## Admin self-registration & password reset
+
+The admin panel now has "Create an account" and "Forgot password?"
+links on the login screen. One extra setup step is needed for this:
+
+1. **SQL Editor → New query**, paste in the entire contents of
+   `supabase/admin-approval-system.sql`, and click **Run**.
+   This adds an approval system: anyone who registers can log in, but
+   can't change anything on the site until an *existing* admin approves
+   them from the new **Admins** tab. Whoever already has a login (you)
+   gets auto-approved by this script — no action needed on your end.
+
+2. **Set your site's URL in Supabase**, so password-reset email links
+   point to the right place:
+   - **Authentication → URL Configuration**
+   - Set **Site URL** to your live Netlify URL, e.g.
+     `https://mtwapa-premier-league.netlify.app`
+   - Under **Redirect URLs**, add the same URL with `/admin.html` on
+     the end, e.g. `https://mtwapa-premier-league.netlify.app/admin.html`
+
+3. That's it. New registrations show up as **Pending** in the Admins
+   tab until you click **Approve**. You can also **Revoke** an admin's
+   access at any time from the same tab.
+
+**Note on email sending:** Supabase's free tier sends confirmation and
+password-reset emails using its own shared mail service, which is fine
+for testing but can be rate-limited or land in spam for real use. If
+that becomes a problem, Supabase's docs explain how to connect your
+own SMTP provider (Authentication → Emails → SMTP Settings) — not
+needed to get started, just worth knowing about later.
+

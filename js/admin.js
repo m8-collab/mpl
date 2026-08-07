@@ -24,18 +24,29 @@ function clubName(id){
   return c ? c.name : id;
 }
 
+/* ---------- screen switching (login / register / forgot / reset / pending / dashboard) ---------- */
+function showScreen(id){
+  ['loginScreen','registerScreen','forgotScreen','resetScreen','pendingScreen','dashboard'].forEach(s=>{
+    $('#'+s).style.display = (s===id) ? (s==='dashboard' ? 'block' : 'flex') : 'none';
+  });
+}
+
 /* =====================================================================
    AUTH
 ===================================================================== */
 async function checkAuth(){
   const { data:{ session } } = await db.auth.getSession();
-  if(session){
-    $('#loginScreen').style.display = 'none';
-    $('#dashboard').style.display = 'block';
+  if(!session){
+    showScreen('loginScreen');
+    return;
+  }
+  // Logged in — but are they an APPROVED admin, or just a pending signup?
+  const { data: adminRow } = await db.from('admins').select('approved').eq('user_id', session.user.id).single();
+  if(adminRow && adminRow.approved){
+    showScreen('dashboard');
     initDashboard();
   } else {
-    $('#loginScreen').style.display = 'flex';
-    $('#dashboard').style.display = 'none';
+    showScreen('pendingScreen');
   }
 }
 
@@ -58,6 +69,119 @@ $('#logoutBtn').addEventListener('click', async ()=>{
   await db.auth.signOut();
   checkAuth();
 });
+$('#pendingLogout').addEventListener('click', async ()=>{
+  await db.auth.signOut();
+  checkAuth();
+});
+
+/* ---------- register ---------- */
+$('#showRegister').addEventListener('click', (e)=>{ e.preventDefault(); showScreen('registerScreen'); });
+$('#showLoginFromRegister').addEventListener('click', (e)=>{ e.preventDefault(); showScreen('loginScreen'); });
+
+$('#registerForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = $('#registerEmail').value.trim();
+  const password = $('#registerPassword').value;
+  const confirm = $('#registerPasswordConfirm').value;
+  const errEl = $('#registerError'), okEl = $('#registerSuccess');
+  errEl.textContent = ''; okEl.textContent = '';
+
+  if(password !== confirm){
+    errEl.textContent = 'Passwords do not match.';
+    return;
+  }
+  const { error } = await db.auth.signUp({ email, password });
+  if(error){
+    errEl.textContent = error.message;
+    return;
+  }
+  okEl.textContent = 'Account created. If email confirmation is required you\'ll get an email first — either way, an existing admin also needs to approve your account before you can make changes.';
+  e.target.reset();
+});
+
+/* ---------- forgot password ---------- */
+$('#showForgot').addEventListener('click', (e)=>{ e.preventDefault(); showScreen('forgotScreen'); });
+$('#showLoginFromForgot').addEventListener('click', (e)=>{ e.preventDefault(); showScreen('loginScreen'); });
+
+$('#forgotForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = $('#forgotEmail').value.trim();
+  const errEl = $('#forgotError'), okEl = $('#forgotSuccess');
+  errEl.textContent = ''; okEl.textContent = '';
+
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname,
+  });
+  if(error){
+    errEl.textContent = error.message;
+    return;
+  }
+  okEl.textContent = 'If that email has an account, a reset link has been sent. Click it to set a new password.';
+  e.target.reset();
+});
+
+/* ---------- set new password (arrives via emailed link) ---------- */
+db.auth.onAuthStateChange((event, session)=>{
+  if(event === 'PASSWORD_RECOVERY'){
+    showScreen('resetScreen');
+  }
+});
+
+$('#resetForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const password = $('#resetPassword').value;
+  const confirm = $('#resetPasswordConfirm').value;
+  const errEl = $('#resetError'), okEl = $('#resetSuccess');
+  errEl.textContent = ''; okEl.textContent = '';
+
+  if(password !== confirm){
+    errEl.textContent = 'Passwords do not match.';
+    return;
+  }
+  const { error } = await db.auth.updateUser({ password });
+  if(error){
+    errEl.textContent = error.message;
+    return;
+  }
+  okEl.textContent = 'Password updated! Redirecting…';
+  setTimeout(checkAuth, 1200);
+});
+
+/* ---------- Admins tab (approve pending signups) ---------- */
+async function loadAdmins(){
+  const { data, error } = await db.from('admins').select('*').order('created_at');
+  const tbl = $('#table-admins');
+  if(error){ tbl.innerHTML = `<tr><td>Couldn't load admins: ${esc(error.message)}</td></tr>`; return; }
+  const rows = data || [];
+  tbl.innerHTML = `
+    <tr><th>Email</th><th>Status</th><th>Registered</th><th></th></tr>
+    ${rows.map(a=>`
+      <tr>
+        <td>${esc(a.email)}</td>
+        <td>${a.approved ? 'Approved' : 'Pending'}</td>
+        <td>${esc((a.created_at||'').slice(0,10))}</td>
+        <td class="row-actions">
+          ${a.approved ? `<button data-revoke>Revoke</button>` : `<button data-approve>Approve</button>`}
+        </td>
+      </tr>`).join('')}`;
+
+  $all('#table-admins tr').slice(1).forEach((tr,i)=>{
+    const row = rows[i];
+    const approveBtn = tr.querySelector('[data-approve]');
+    const revokeBtn = tr.querySelector('[data-revoke]');
+    if(approveBtn) approveBtn.addEventListener('click', async ()=>{
+      const { error } = await db.from('admins').update({ approved:true }).eq('user_id', row.user_id);
+      if(error){ alert('Error: ' + error.message); return; }
+      loadAdmins();
+    });
+    if(revokeBtn) revokeBtn.addEventListener('click', async ()=>{
+      if(!confirm(`Revoke admin access for ${row.email}?`)) return;
+      const { error } = await db.from('admins').update({ approved:false }).eq('user_id', row.user_id);
+      if(error){ alert('Error: ' + error.message); return; }
+      loadAdmins();
+    });
+  });
+}
 
 /* =====================================================================
    TABS
@@ -84,6 +208,7 @@ function initDashboard(){
   loadNews();
   loadGallery();
   loadSettings();
+  loadAdmins();
 
   setupForm('clubs');
   setupForm('table', {selectDeps:['club_id']});
