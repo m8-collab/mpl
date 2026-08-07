@@ -338,6 +338,71 @@ function viewGallery(){
   `;
 }
 
+function viewAbout(){
+  return `
+  <section style="padding-top:44px;">
+    <div class="eyebrow">WHO WE ARE</div>
+    <h2 style="margin-top:6px;font-size:2.1rem;">Mtwapa Premier CBO</h2>
+    <p style="color:var(--ivory-dim);max-width:70ch;margin-top:14px;line-height:1.7;">
+      A group of community development in sports, talents, arts, health, education,
+      clean environment and economic and social transformation for a sustainable
+      future development, hereby formed on 16th April 2026.
+    </p>
+
+    <h3 style="margin-top:36px;font-size:1.3rem;color:var(--gold);">Purpose of the Group</h3>
+    <p style="color:var(--ivory-dim);max-width:70ch;margin-top:10px;line-height:1.7;">
+      To organize and promote sporting activities among sportsmen and the community
+      at large. Becoming a cornerstone in establishing sports talent events,
+      academies and stadiums for the purpose of running sporting activities.
+      Attaining sporting resources to implement sports tournaments, local leagues,
+      awards and rewarding.
+    </p>
+
+    <h3 style="margin-top:36px;font-size:1.3rem;color:var(--gold);">Objectives</h3>
+    <ul style="color:var(--ivory-dim);max-width:70ch;margin-top:10px;line-height:1.9;padding-left:20px;">
+      <li>To promote unity and inter-personal relationship between members.</li>
+      <li>To promote talents in sports.</li>
+      <li>To venture into sporting activities through organizing sports activities and competitions so as to promote youth talents.</li>
+      <li>Provide a chance for youth to achieve educational goals through sourcing and providing educational incentives through scholarships, and sourcing support for the same.</li>
+      <li>Provide sports scholarships to talented youth by negotiating with educational institutions, local leaders, non-governmental organizations and well-wishers.</li>
+      <li>Offer support to groups and youth in developing film and music projects.</li>
+      <li>Organize competitions and awards among sporting clubs.</li>
+      <li>Organize football, bicycle race, swimming and other sports competitions with the aim of promoting, rewarding, exposing and sourcing financial and resource assistance.</li>
+      <li>Collaborate with business stakeholders, community leaders and NGOs in sourcing support for implementation of sports and talent avenues.</li>
+      <li>Develop sports as an economic sustainability avenue for members and the community at large.</li>
+      <li>Inform and raise community awareness on matters of health, environment and economic development through sports and related talent activities.</li>
+      <li>Enhance oneness, sense of belonging, integrity and respect to the law and to one another.</li>
+      <li>Initiate socio-economic activities for the benefit of members and the community, including education scholarships for needy, bright, orphaned and talented youth.</li>
+      <li>Encourage income-generating investment projects.</li>
+      <li>Plan properly, and develop effective and efficient monitoring and evaluation mechanisms across all activities and projects.</li>
+      <li>Encourage members to interact with each other, sharing experiences and challenges in life.</li>
+      <li>Provide financial support to members to help establish income-generating projects.</li>
+      <li>Provide a sporting chance to the community through programmes such as the Mtwapa Premier soccer initiative, Copsa Talents for School, athletics and bicycle race competitions.</li>
+    </ul>
+
+    <h3 style="margin-top:36px;font-size:1.3rem;color:var(--gold);">Contact & Address</h3>
+    <div class="about-contact-grid">
+      <div>
+        <div class="mono" style="color:var(--steel);font-size:.68rem;letter-spacing:.08em;">OFFICE</div>
+        <p style="margin-top:6px;color:var(--ivory-dim);line-height:1.6;">
+          Starlight Building, Mtwapa Luxury Road, Mtaani–Maweni,<br>
+          Mtwapa location, Shimo la Tewa Ward,<br>
+          Kilifi South Sub-County, Kilifi County
+        </p>
+      </div>
+      <div>
+        <div class="mono" style="color:var(--steel);font-size:.68rem;letter-spacing:.08em;">POSTAL ADDRESS</div>
+        <p style="margin-top:6px;color:var(--ivory-dim);">P.O. Box 726-80109, Mtwapa</p>
+        <div class="mono" style="color:var(--steel);font-size:.68rem;letter-spacing:.08em;margin-top:16px;">EMAIL</div>
+        <p style="margin-top:6px;color:var(--ivory-dim);"><a href="mailto:mtwapapremier26@gmail.com" style="color:var(--gold);">mtwapapremier26@gmail.com</a></p>
+        <div class="mono" style="color:var(--steel);font-size:.68rem;letter-spacing:.08em;margin-top:16px;">TELEPHONE</div>
+        <p style="margin-top:6px;color:var(--ivory-dim);">0799 669040 &middot; 0711 413416 &middot; 0722 370130</p>
+      </div>
+    </div>
+  </section>
+  `;
+}
+
 function viewPredictor(){
   const upcoming = FIXTURES.filter(f=>!isFixturePlayed(f)).slice(0,10);
   return `

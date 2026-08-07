@@ -228,6 +228,15 @@ img{max-width:100%;display:block;}
   display:flex;align-items:center;gap:16px;z-index:2;
 }
 
+/* ---------- ABOUT / CBO PAGE ---------- */
+.about-contact-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:32px; margin-top:14px;
+  padding:22px 24px; background:var(--pitch-2); border:1px solid var(--line);
+}
+@media(max-width:640px){
+  .about-contact-grid{ grid-template-columns:1fr; gap:20px; }
+}
+
 /* ---------- MATCHDAY PHOTO GALLERY ---------- */
 .photo-grid{
   display:grid;

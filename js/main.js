@@ -136,6 +136,7 @@ const routes = {
   '/scorers': viewScorers,
   '/news': viewNews,
   '/gallery': viewGallery,
+  '/about': viewAbout,
   '/predictor': viewPredictor,
 };
 
