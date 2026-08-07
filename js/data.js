@@ -73,14 +73,14 @@ async function loadAllData(){
     { data: galleryData, error: e7 },
     { data: settingsData, error: e8 },
   ] = await Promise.all([
-    supabase.from('clubs').select('*'),
-    supabase.from('table_rows').select('*'),
-    supabase.from('scorers').select('*'),
-    supabase.from('fixtures').select('*'),
-    supabase.from('squads').select('*').order('jersey_no'),
-    supabase.from('news').select('*').order('created_at', { ascending:false }),
-    supabase.from('gallery').select('*').order('sort_order').order('created_at'),
-    supabase.from('settings').select('*').eq('id',1).single(),
+    db.from('clubs').select('*'),
+    db.from('table_rows').select('*'),
+    db.from('scorers').select('*'),
+    db.from('fixtures').select('*'),
+    db.from('squads').select('*').order('jersey_no'),
+    db.from('news').select('*').order('created_at', { ascending:false }),
+    db.from('gallery').select('*').order('sort_order').order('created_at'),
+    db.from('settings').select('*').eq('id',1).single(),
   ]);
 
   const firstError = e1||e2||e3||e4||e5||e6||e7||e8;

@@ -28,7 +28,7 @@ function clubName(id){
    AUTH
 ===================================================================== */
 async function checkAuth(){
-  const { data:{ session } } = await supabase.auth.getSession();
+  const { data:{ session } } = await db.auth.getSession();
   if(session){
     $('#loginScreen').style.display = 'none';
     $('#dashboard').style.display = 'block';
@@ -44,7 +44,7 @@ $('#loginForm').addEventListener('submit', async (e)=>{
   const email = $('#loginEmail').value.trim();
   const password = $('#loginPassword').value;
   $('#loginError').textContent = '';
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await db.auth.signInWithPassword({ email, password });
   if(error){
     $('#loginError').textContent = error.message === 'Invalid login credentials'
       ? 'Incorrect email or password.'
@@ -55,7 +55,7 @@ $('#loginForm').addEventListener('submit', async (e)=>{
 });
 
 $('#logoutBtn').addEventListener('click', async ()=>{
-  await supabase.auth.signOut();
+  await db.auth.signOut();
   checkAuth();
 });
 
@@ -126,12 +126,12 @@ function setupForm(key){
         // id is the primary key and shouldn't change on edit
         delete payload.id;
       }
-      ({ error } = await supabase.from(table).update(payload).eq(PRIMARY_KEY[key], editingId));
+      ({ error } = await db.from(table).update(payload).eq(PRIMARY_KEY[key], editingId));
     } else {
       if(key === 'fixtures' && !payload.id){
         payload.id = 'm' + payload.match_no;
       }
-      ({ error } = await supabase.from(table).insert(payload));
+      ({ error } = await db.from(table).insert(payload));
     }
 
     if(error){ alert('Error: ' + error.message); return; }
@@ -175,7 +175,7 @@ function startEdit(key, row){
 
 async function deleteRow(key, id){
   if(!confirm('Delete this? This cannot be undone.')) return;
-  const { error } = await supabase.from(TABLE_NAMES[key]).delete().eq(PRIMARY_KEY[key], id);
+  const { error } = await db.from(TABLE_NAMES[key]).delete().eq(PRIMARY_KEY[key], id);
   if(error){ alert('Error: ' + error.message); return; }
   if(key === 'clubs') await loadClubs();
   if(key === 'table') loadTableRows();
@@ -189,7 +189,7 @@ async function deleteRow(key, id){
    CLUBS
 ===================================================================== */
 async function loadClubs(){
-  const { data, error } = await supabase.from('clubs').select('*').order('name');
+  const { data, error } = await db.from('clubs').select('*').order('name');
   if(error){ console.error(error); return; }
   clubsCache = data || [];
 
@@ -231,7 +231,7 @@ function wireRowButtons(tableSel, rows, key){
    TABLE ROWS
 ===================================================================== */
 async function loadTableRows(){
-  const { data, error } = await supabase.from('table_rows').select('*');
+  const { data, error } = await db.from('table_rows').select('*');
   if(error){ console.error(error); return; }
   const rows = (data||[]).map(r=>({ ...r, gd:r.gf-r.ga, pts:r.w*3+r.d }))
     .sort((a,b)=> b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);
@@ -257,7 +257,7 @@ async function loadTableRows(){
    FIXTURES
 ===================================================================== */
 async function loadFixtures(){
-  const { data, error } = await supabase.from('fixtures').select('*').order('date').order('match_no');
+  const { data, error } = await db.from('fixtures').select('*').order('date').order('match_no');
   if(error){ console.error(error); return; }
   const rows = data || [];
   const today = new Date().toISOString().slice(0,10);
@@ -286,7 +286,7 @@ async function loadFixtures(){
    SCORERS
 ===================================================================== */
 async function loadScorers(){
-  const { data, error } = await supabase.from('scorers').select('*').order('goals', { ascending:false });
+  const { data, error } = await db.from('scorers').select('*').order('goals', { ascending:false });
   if(error){ console.error(error); return; }
   const rows = data || [];
 
@@ -310,7 +310,7 @@ async function loadScorers(){
    SQUADS
 ===================================================================== */
 async function loadSquads(){
-  const { data, error } = await supabase.from('squads').select('*').order('club_id').order('jersey_no');
+  const { data, error } = await db.from('squads').select('*').order('club_id').order('jersey_no');
   if(error){ console.error(error); return; }
   const rows = data || [];
 
@@ -334,7 +334,7 @@ async function loadSquads(){
    NEWS
 ===================================================================== */
 async function loadNews(){
-  const { data, error } = await supabase.from('news').select('*').order('created_at', { ascending:false });
+  const { data, error } = await db.from('news').select('*').order('created_at', { ascending:false });
   if(error){ console.error(error); return; }
   const rows = data || [];
 
@@ -369,10 +369,10 @@ function setupGalleryUpload(){
       status.textContent = `Uploading ${done+1} of ${files.length}…`;
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
       const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('gallery').upload(path, file);
+      const { error: upErr } = await db.storage.from('gallery').upload(path, file);
       if(upErr){ alert('Upload failed for ' + file.name + ': ' + upErr.message); continue; }
-      const { data: pub } = supabase.storage.from('gallery').getPublicUrl(path);
-      await supabase.from('gallery').insert({ url: pub.publicUrl, caption: '' });
+      const { data: pub } = db.storage.from('gallery').getPublicUrl(path);
+      await db.from('gallery').insert({ url: pub.publicUrl, caption: '' });
       done++;
     }
     status.textContent = `Done — uploaded ${done} of ${files.length} photo(s).`;
@@ -382,7 +382,7 @@ function setupGalleryUpload(){
 }
 
 async function loadGallery(){
-  const { data, error } = await supabase.from('gallery').select('*').order('sort_order').order('created_at');
+  const { data, error } = await db.from('gallery').select('*').order('sort_order').order('created_at');
   if(error){ console.error(error); return; }
   const rows = data || [];
 
@@ -399,15 +399,15 @@ async function loadGallery(){
     el.querySelector('[data-del-photo]').addEventListener('click', async ()=>{
       if(!confirm('Delete this photo?')) return;
       const path = row.url.split('/gallery/').pop();
-      await supabase.storage.from('gallery').remove([path]);
-      await supabase.from('gallery').delete().eq('id', row.id);
+      await db.storage.from('gallery').remove([path]);
+      await db.from('gallery').delete().eq('id', row.id);
       loadGallery();
     });
     let saveTimer;
     el.querySelector('[data-caption]').addEventListener('input', (e)=>{
       clearTimeout(saveTimer);
       saveTimer = setTimeout(async ()=>{
-        await supabase.from('gallery').update({ caption: e.target.value }).eq('id', row.id);
+        await db.from('gallery').update({ caption: e.target.value }).eq('id', row.id);
       }, 600);
     });
   });
@@ -417,7 +417,7 @@ async function loadGallery(){
    SETTINGS
 ===================================================================== */
 async function loadSettings(){
-  const { data, error } = await supabase.from('settings').select('*').eq('id',1).single();
+  const { data, error } = await db.from('settings').select('*').eq('id',1).single();
   if(error){ console.error(error); return; }
   const form = $('#form-settings');
   form.querySelector('[name="season_label"]').value = data?.season_label || '';
@@ -428,7 +428,7 @@ function setupSettingsForm(){
   $('#form-settings').addEventListener('submit', async (e)=>{
     e.preventDefault();
     const fd = new FormData(e.target);
-    const { error } = await supabase.from('settings').update({
+    const { error } = await db.from('settings').update({
       season_label: fd.get('season_label'),
       as_of_label: fd.get('as_of_label'),
     }).eq('id', 1);

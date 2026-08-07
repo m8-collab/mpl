@@ -200,7 +200,7 @@ function scheduleLiveReload(){
 
 function subscribeLiveUpdates(){
   const tables = ['clubs','table_rows','scorers','fixtures','squads','news','gallery','settings'];
-  const channel = supabase.channel('public-site-updates');
+  const channel = db.channel('public-site-updates');
   tables.forEach(t=>{
     channel.on('postgres_changes', { event:'*', schema:'public', table:t }, scheduleLiveReload);
   });
