@@ -21,7 +21,7 @@
 
 input, select, textarea{
   background:var(--pitch); border:1px solid var(--line); color:var(--ivory);
-  padding:10px 12px; font-family:'IBM Plex Sans'; font-size:.9rem; border-radius:2px;
+  padding:10px 12px; font-family:'Poppins'; font-size:.9rem; border-radius:2px;
 }
 input:focus, select:focus, textarea:focus{ outline:1px solid var(--gold); border-color:var(--gold); }
 
@@ -31,7 +31,7 @@ input:focus, select:focus, textarea:focus{ outline:1px solid var(--gold); border
   display:flex; align-items:center; justify-content:space-between;
   padding:16px 28px; border-bottom:1px solid var(--line); background:var(--pitch-2);
 }
-.admin-header .brand-name{ font-family:'Oswald'; font-weight:600; letter-spacing:.04em; }
+.admin-header .brand-name{ font-family:'Anton'; font-weight:400; letter-spacing:.02em; }
 .admin-header .brand-name small{ display:block; font-family:'IBM Plex Mono'; font-size:.6rem; color:var(--steel); letter-spacing:.08em; }
 
 .admin-tabs{
@@ -47,7 +47,7 @@ input:focus, select:focus, textarea:focus{ outline:1px solid var(--gold); border
 
 .admin-main{ max-width:1180px; margin:0 auto; padding:32px 28px 80px; }
 .admin-panel h2{ font-size:1.5rem; }
-.admin-subhead{ font-family:'Oswald'; font-weight:600; font-size:1.05rem; color:var(--gold); border-top:1px solid var(--line); padding-top:24px; }
+.admin-subhead{ font-family:'Anton'; font-weight:400; font-size:1.1rem; color:var(--gold); border-top:1px solid var(--line); padding-top:24px; }
 
 /* ---------- forms ---------- */
 .admin-form{ margin-top:18px; background:var(--pitch-2); border:1px solid var(--line); padding:20px; }
@@ -66,7 +66,7 @@ table.admin-table th{
   color:var(--steel); padding:10px 12px; border-bottom:1px solid var(--line);
 }
 table.admin-table td{ padding:10px 12px; border-bottom:1px solid var(--line); color:var(--ivory); }
-table.admin-table tr:hover td{ background:rgba(240,236,224,0.03); }
+table.admin-table tr:hover td{ background:rgba(21,27,61,0.03); }
 table.admin-table .row-actions{ display:flex; gap:8px; white-space:nowrap; }
 table.admin-table .row-actions button{
   background:transparent; border:1px solid var(--line); color:var(--ivory-dim);
@@ -86,8 +86,8 @@ table.admin-table .row-actions button.danger:hover{ border-color:var(--claret-br
   font-size:.72rem; padding:8px; border-radius:0;
 }
 .admin-gallery-item button.danger{
-  position:absolute; top:6px; right:6px; background:rgba(18,42,32,0.85); border:1px solid var(--line);
-  color:var(--ivory); width:26px; height:26px; border-radius:50%; font-size:.9rem; line-height:1;
+  position:absolute; top:6px; right:6px; background:rgba(21,27,61,0.85); border:1px solid rgba(255,255,255,0.2);
+  color:#fff; width:26px; height:26px; border-radius:50%; font-size:.9rem; line-height:1;
 }
 .admin-gallery-item button.danger:hover{ border-color:var(--claret-br); color:var(--claret-br); }
 

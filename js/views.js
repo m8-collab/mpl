@@ -12,7 +12,11 @@ const PHOTOS = {
 };
 
 /* ===================== HELPERS ===================== */
-function swatch(id){ return `<span class="swatch" style="background:${CLUB_MAP[id].color}"></span>`; }
+function swatch(id){
+  const name = CLUB_MAP[id] ? CLUB_MAP[id].name : '';
+  const initials = name.split(/\s+/).filter(w=>w.length).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  return `<span class="swatch" style="background:${CLUB_MAP[id].color}">${initials}</span>`;
+}
 function ordinalSuffix(n){
   const s=["th","st","nd","rd"], v=n%100;
   return s[(v-20)%10]||s[v]||s[0];
@@ -66,6 +70,33 @@ function fixtureCardHtml(f){
   </div>`;
 }
 
+function podiumHtml(top){
+  if(!top.length) return `<p style="color:var(--ivory-dim);">No scorers on record yet.</p>`;
+  const initials = s => s.player.name.split(/\s+/).filter(w=>w.length).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  const order = [1,0,2].filter(i=>top[i]); // silver, gold (center), bronze
+  return `
+  <div class="podium">
+    ${order.map(i=>{
+      const s = top[i];
+      const rank = i+1;
+      const cls = rank===1?'first':rank===2?'second':'third';
+      return `
+      <div class="podium-item ${cls}">
+        ${rank===1?'<div class="podium-crown">&#128081;</div>':''}
+        <div class="podium-avatar" style="background:${s.club.color}">${initials(s)}<span class="podium-rank">${rank}</span></div>
+        <div class="podium-name">${s.player.name}</div>
+        <div class="podium-club">${s.club.name}</div>
+        <div class="podium-goals">${s.goals}</div>
+        <div class="podium-label">Goals</div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div style="text-align:center;margin-top:8px;">
+    <a href="#/scorers" class="btn">Full Rankings</a>
+  </div>
+  `;
+}
+
 /* ===================== VIEWS ===================== */
 function viewHome(){
   const top6 = TABLE.slice(0,6);
@@ -75,11 +106,10 @@ function viewHome(){
 
   return `
   <section class="hero pitch-lines">
-    <div class="photo-hero" style="background-image:url('${PHOTOS.heroStadium}')"></div>
     <div class="eyebrow">${SEASON_LABEL.toUpperCase()} — MTWAPA PREMIER LEAGUE</div>
     <div class="hero-grid" style="margin-top:16px;">
       <div>
-        <h1>ONE TABLE.<br><em>26 CLUBS.</em></h1>
+        <h1>ONE TABLE.<br><em>${CLUBS.length} CLUBS.</em></h1>
         <p class="lede">The Mtwapa Premier League — real clubs, real results, one table that never lies. Follow the title race, the Golden Boot chase, and the fight at the bottom.</p>
         <div class="hero-cta">
           <a href="#/table" class="btn solid">Full Table</a>
@@ -103,22 +133,9 @@ function viewHome(){
   </section>
 
   <section>
-    <div class="section-head">
-      <div><div class="eyebrow">GOLDEN BOOT</div><h2 style="margin-top:6px;">Top Scorers</h2></div>
-      <a href="#/scorers" class="btn">Full List</a>
-    </div>
-    <table class="league-table">
-      <thead><tr><th>#</th><th>Player</th><th>Club</th><th class="num">Goals</th></tr></thead>
-      <tbody>
-        ${top3Scorers.map((s,i)=>`
-          <tr>
-            <td class="pos">${i+1}</td>
-            <td class="club-cell">${s.player.name}</td>
-            <td>${swatch(s.club.id)} ${s.club.name}</td>
-            <td class="num" style="color:var(--gold);font-weight:600;">${s.goals}</td>
-          </tr>`).join('')}
-      </tbody>
-    </table>
+    <div class="eyebrow">TOP PERFORMERS</div>
+    <h2 style="margin-top:6px;">Player Stats</h2>
+    ${podiumHtml(top3Scorers)}
   </section>
 
   <section>
@@ -248,7 +265,7 @@ function viewClubDetail(id){
     <h3 style="margin-top:36px;font-size:1.25rem;">On The Scoresheet</h3>
     <table class="squad" style="margin-top:14px;">
       <thead><tr><th>Player</th><th class="num">Goals</th></tr></thead>
-      <tbody>${clubScorers.map(s=>`<tr><td style="font-family:'IBM Plex Sans';">${s.player.name}</td><td class="num" style="color:var(--gold);">${s.goals}</td></tr>`).join('')}</tbody>
+      <tbody>${clubScorers.map(s=>`<tr><td style="font-family:'Poppins';">${s.player.name}</td><td class="num" style="color:var(--gold);">${s.goals}</td></tr>`).join('')}</tbody>
     </table>` : ''}
 
     <h3 style="margin-top:36px;font-size:1.25rem;">Squad</h3>
@@ -256,7 +273,7 @@ function viewClubDetail(id){
     <div class="table-scroll">
       <table class="squad" style="margin-top:14px;min-width:320px;">
         <thead><tr><th>#</th><th>Name</th></tr></thead>
-        <tbody>${squad.map(p=>`<tr><td>${p.num}</td><td style="font-family:'IBM Plex Sans';">${p.name}</td></tr>`).join('')}</tbody>
+        <tbody>${squad.map(p=>`<tr><td>${p.num}</td><td style="font-family:'Poppins';">${p.name}</td></tr>`).join('')}</tbody>
       </table>
     </div>` : `<p style="color:var(--ivory-dim);margin-top:14px;">Squad list coming soon.</p>`}
 
