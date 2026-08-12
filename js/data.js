@@ -63,6 +63,28 @@ function generateSquad(clubId){
   return list;
 }
 
+/* ---------- crest images ----------
+   Static files bundled in the repo under assets/crests/. Any club id not
+   listed here just falls back to the colored-initials swatch, so adding
+   more crests later is a matter of dropping a file in and adding a line. */
+const CRESTS = {
+  travellers: 'assets/crests/travellers.jpg',
+  revolution: 'assets/crests/revolution.jpg',
+  laliga: 'assets/crests/laliga.jpg',
+  newtalent: 'assets/crests/newtalent.jpg',
+  mgandini: 'assets/crests/mgandini.jpg',
+  mpatempate: 'assets/crests/mpatempate.jpg',
+  mtwapaallstars: 'assets/crests/mtwapaallstars.jpg',
+  kilifiteachers: 'assets/crests/kilifiteachers.jpg',
+  mikanjuni: 'assets/crests/mikanjuni.jpg',
+  bahariutd: 'assets/crests/bahariutd.jpg',
+  fuhua: 'assets/crests/fuhua.jpg',
+  baraza: 'assets/crests/baraza.jpg',
+  kicks: 'assets/crests/kicks.jpg',
+  mtepeni: 'assets/crests/mtepeni.jpg',
+  dola: 'assets/crests/dola.jpg',
+};
+
 function esc(s){
   if(s===null || s===undefined) return '';
   return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -106,10 +128,10 @@ async function loadAllData(){
   SEASON_LABEL = (settingsData && settingsData.season_label) || 'Mtwapa Premier League';
   AS_OF_LABEL  = (settingsData && settingsData.as_of_label) || '';
 
-  // Clubs (+ deterministic colors)
+  // Clubs (+ deterministic colors + crest image if we have one)
   const clubsRaw = clubsData || [];
   CLUB_MAP = {};
-  clubsRaw.forEach(c=>{ CLUB_MAP[c.id] = { ...c, color: colorForId(c.id) }; });
+  clubsRaw.forEach(c=>{ CLUB_MAP[c.id] = { ...c, color: colorForId(c.id), crest: CRESTS[c.id] || null }; });
 
   // Table — recomputed rank from points / goal difference / goals for
   const rows = (tableRowsData || [])

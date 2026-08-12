@@ -13,9 +13,11 @@ const PHOTOS = {
 
 /* ===================== HELPERS ===================== */
 function swatch(id){
-  const name = CLUB_MAP[id] ? CLUB_MAP[id].name : '';
-  const initials = name.split(/\s+/).filter(w=>w.length).slice(0,2).map(w=>w[0]).join('').toUpperCase();
-  return `<span class="swatch" style="background:${CLUB_MAP[id].color}">${initials}</span>`;
+  const club = CLUB_MAP[id];
+  if(!club) return '';
+  if(club.crest) return `<span class="swatch swatch-crest"><img src="${club.crest}" alt="${esc(club.name)} crest" loading="lazy"></span>`;
+  const initials = club.name.split(/\s+/).filter(w=>w.length).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  return `<span class="swatch" style="background:${club.color}">${initials}</span>`;
 }
 function ordinalSuffix(n){
   const s=["th","st","nd","rd"], v=n%100;
@@ -57,16 +59,31 @@ function tableLegend(){
   </div>`;
 }
 
+function newsCardHtml(n){
+  return `
+  <div class="news-card">
+    <div class="news-band">${n.tag ? esc(n.tag) : 'NEWS'}</div>
+    <div class="news-body">
+      <h3>${esc(n.title)}</h3>
+      <p>${esc(n.body)}</p>
+    </div>
+  </div>`;
+}
+
 function fixtureCardHtml(f){
   const played = isFixturePlayed(f);
   return `
   <div class="match-card">
+    <div class="match-card-head">
+      <span>&#128197; ${fmtDate(f.date)}${f.kickoff ? ' &middot; ' + f.kickoff : ''}</span>
+      <span>${f.venue ? f.venue.toUpperCase() : ''}</span>
+    </div>
     <div class="match-row">
       <div class="match-team">${swatch(f.home)}<span>${CLUB_MAP[f.home].name}</span></div>
       <span class="match-vs">${played ? 'FT' : 'V'}</span>
       <div class="match-team" style="justify-content:flex-end;text-align:right;"><span>${CLUB_MAP[f.away].name}</span>${swatch(f.away)}</div>
     </div>
-    <div class="match-status">MATCH #${f.matchNo} &middot; ${f.venue} &middot; ${f.kickoff} &middot; ${played ? 'PLAYED' : 'UPCOMING'}</div>
+    <div class="match-status">MATCH #${f.matchNo} &middot; ${played ? 'PLAYED' : 'UPCOMING'}</div>
   </div>`;
 }
 
@@ -109,6 +126,7 @@ function viewHome(){
     <div class="eyebrow">${SEASON_LABEL.toUpperCase()} — MTWAPA PREMIER LEAGUE</div>
     <div class="hero-grid" style="margin-top:16px;">
       <div>
+        <div class="stat-strip">${CLUBS.length} CLUBS &nbsp;&middot;&nbsp; ${FIXTURES.length} FIXTURES &nbsp;&middot;&nbsp; 1 CHAMPION</div>
         <h1>ONE TABLE.<br><em>${CLUBS.length} CLUBS.</em></h1>
         <p class="lede">The Mtwapa Premier League — real clubs, real results, one table that never lies. Follow the title race, the Golden Boot chase, and the fight at the bottom.</p>
         <div class="hero-cta">
@@ -165,7 +183,7 @@ function viewHome(){
       <a href="#/news" class="btn">All News</a>
     </div>
     <div class="news-grid">
-      ${NEWS.slice(0,3).map(n=>`<div class="news-card"><div class="tag">${n.tag}</div><h3>${n.title}</h3><p>${n.body}</p></div>`).join('')}
+      ${NEWS.slice(0,3).map(newsCardHtml).join('')}
     </div>
   </section>
   `;
@@ -221,7 +239,7 @@ function viewClubs(){
         <a href="#/club/${c.id}" class="club-card">
           <div class="bar" style="background:${c.color}"></div>
           <div class="pos-tag">${row.rank}${ordinalSuffix(row.rank)} Place${c.venue ? ' &middot; '+c.venue : ''}</div>
-          <h3>${c.name}</h3>
+          <div class="club-card-head">${swatch(c.id)}<h3>${c.name}</h3></div>
           <div class="rec">${row.pts} PTS</div>
         </a>`;
       }).join('')}
@@ -244,7 +262,7 @@ function viewClubDetail(id){
     <div class="club-banner">
       <img src="${PHOTOS.aerialStadium}" alt="" loading="lazy">
       <div class="crest-overlay">
-        <div class="crest" style="background:${c.color}"></div>
+        ${c.crest ? `<img class="crest" src="${c.crest}" alt="${esc(c.name)} crest">` : `<div class="crest" style="background:${c.color}"></div>`}
       </div>
     </div>
     <div class="club-header">
@@ -325,7 +343,7 @@ function viewNews(){
     <div class="eyebrow">LEAGUE WIRE</div>
     <h2 style="margin-top:6px;font-size:2.1rem;">News</h2>
     <div class="news-grid" style="margin-top:26px;">
-      ${NEWS.map(n=>`<div class="news-card"><div class="tag">${n.tag}</div><h3>${n.title}</h3><p>${n.body}</p></div>`).join('')}
+      ${NEWS.map(newsCardHtml).join('')}
     </div>
   </section>
   `;
