@@ -83,6 +83,22 @@ const CRESTS = {
   kicks: 'assets/crests/kicks.jpg',
   mtepeni: 'assets/crests/mtepeni.jpg',
   dola: 'assets/crests/dola.jpg',
+  progressive: 'assets/crests/progressive.jpg',
+  ambassadors: 'assets/crests/ambassadors.jpg',
+  kanamai: 'assets/crests/kanamai.jpg',
+  mega: 'assets/crests/mega.jpg',
+  ama4: 'assets/crests/ama4.jpg',
+  sunset: 'assets/crests/sunset.jpg',
+  kimbunga: 'assets/crests/kimbunga.jpg',
+  posterrangers: 'assets/crests/posterrangers.jpg',
+  youngheroes: 'assets/crests/youngheroes.jpg',
+  mvitaoil: 'assets/crests/mvitaoil.jpg',
+  mtwapaseniors: 'assets/crests/mtwapaseniors.jpg',
+  majaoni: 'assets/crests/majaoni.jpg',
+  fullsun: 'assets/crests/fullsun.jpg',
+  zion: 'assets/crests/zion.jpg',
+  komboa: 'assets/crests/komboa.jpg',
+  bomaniyouth: 'assets/crests/bomaniyouth.jpg',
 };
 
 function esc(s){
