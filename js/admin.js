@@ -215,7 +215,7 @@ function initDashboard(){
   setupForm('table', {selectDeps:['club_id']});
   setupForm('fixtures', {selectDeps:['home_id','away_id']});
   setupForm('scorers', {selectDeps:['club_id']});
-  setupForm('squads', {selectDeps:['club_id']});
+  setupSquadsForm();
   setupForm('news');
   setupForm('albums');
   setupSettingsForm();
@@ -445,9 +445,10 @@ async function loadSquads(){
 
   const tbl = $('#table-squads');
   tbl.innerHTML = `
-    <tr><th>Club</th><th>Player</th><th>No.</th><th></th></tr>
+    <tr><th>Photo</th><th>Club</th><th>Player</th><th>No.</th><th></th></tr>
     ${rows.map(s=>`
       <tr>
+        <td>${s.photo_url ? `<img src="${esc(s.photo_url)}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">` : '—'}</td>
         <td>${esc(clubName(s.club_id))}</td>
         <td>${esc(s.player_name)}</td>
         <td>${s.jersey_no ?? '—'}</td>
@@ -457,6 +458,57 @@ async function loadSquads(){
         </td>
       </tr>`).join('')}`;
   wireRowButtons('#table-squads', rows, 'squads');
+}
+
+function setupSquadsForm(){
+  const form = $('#form-squads');
+  const cancelBtn = form.querySelector('[data-cancel-edit]');
+  const status = $('#squadUploadStatus');
+
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(form);
+    const editingId = fd.get('_editing');
+    const file = $('#squadPhotoInput').files[0];
+
+    const payload = {
+      club_id: fd.get('club_id'),
+      player_name: fd.get('player_name'),
+      jersey_no: fd.get('jersey_no') ? Number(fd.get('jersey_no')) : null,
+    };
+
+    if(file){
+      status.textContent = 'Uploading photo…';
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+      const { error: upErr } = await db.storage.from('players').upload(path, file);
+      if(upErr){ alert('Photo upload failed: ' + upErr.message); status.textContent=''; return; }
+      const { data: pub } = db.storage.from('players').getPublicUrl(path);
+      payload.photo_url = pub.publicUrl;
+    }
+
+    let error;
+    if(editingId){
+      ({ error } = await db.from('squads').update(payload).eq('id', editingId));
+    } else {
+      ({ error } = await db.from('squads').insert(payload));
+    }
+    status.textContent = '';
+    if(error){ alert('Error: ' + error.message); return; }
+
+    form.reset();
+    form.querySelector('[name="_editing"]').value = '';
+    cancelBtn.style.display = 'none';
+    form.querySelector('button[type=submit]').textContent = 'Add Player';
+    loadSquads();
+  });
+
+  cancelBtn.addEventListener('click', ()=>{
+    form.reset();
+    form.querySelector('[name="_editing"]').value = '';
+    cancelBtn.style.display = 'none';
+    form.querySelector('button[type=submit]').textContent = 'Add Player';
+  });
 }
 
 /* =====================================================================

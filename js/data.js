@@ -184,7 +184,7 @@ async function loadAllData(){
   (squadsData || []).forEach(s=>{
     if(!CLUB_MAP[s.club_id]) return;
     if(!SQUADS_MAP[s.club_id]) SQUADS_MAP[s.club_id] = [];
-    SQUADS_MAP[s.club_id].push({ name:s.player_name, num:s.jersey_no });
+    SQUADS_MAP[s.club_id].push({ name:s.player_name, num:s.jersey_no, photo:s.photo_url || null });
   });
 
   // News

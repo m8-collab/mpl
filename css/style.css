@@ -183,6 +183,22 @@ table.league-table td.club-cell{display:flex;align-items:center;gap:10px;font-fa
 .stat-box{border:1px solid var(--line);padding:15px;text-align:center;background:var(--pitch-2);border-radius:6px;}
 .stat-box .v{font-family:'Anton';font-size:2.1rem;color:var(--gold);}
 .stat-box .l{font-family:'IBM Plex Mono';font-size:.62rem;letter-spacing:.09em;color:var(--steel);text-transform:uppercase;}
+/* ---------- SQUAD PHOTO GRID ---------- */
+.squad-grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(110px,1fr)); gap:16px; margin-top:16px;
+}
+.squad-card{ text-align:center; }
+.squad-photo{
+  width:100%; aspect-ratio:3/4; object-fit:cover; border-radius:6px;
+  border:1px solid var(--line); background:var(--pitch);
+}
+.squad-photo-fallback{
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Anton'; font-size:1.6rem; color:var(--steel); background:var(--pitch-2);
+}
+.squad-name{ font-family:'Poppins'; font-weight:500; font-size:.78rem; color:var(--navy); margin-top:8px; line-height:1.25; }
+.squad-num{ font-family:'IBM Plex Mono'; font-size:.65rem; color:var(--gold); margin-top:2px; }
+
 table.squad{width:100%;border-collapse:collapse;font-size:.85rem;}
 table.squad th{text-align:left;padding:9px 8px;border-bottom:1px solid var(--gold);font-family:'IBM Plex Mono';font-size:.62rem;color:var(--steel);text-transform:uppercase;}
 table.squad td{padding:9px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono';font-size:.8rem;}

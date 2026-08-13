@@ -216,18 +216,20 @@
     <!-- SQUADS -->
     <section class="admin-panel" id="panel-squads" style="display:none;">
       <h2>Squads</h2>
-      <p class="admin-hint">Only clubs with players added here will show a squad list on the site.</p>
+      <p class="admin-hint">Only clubs with players added here will show a squad list on the site. Photo is optional — players without one show initials instead.</p>
       <form id="form-squads" class="admin-form">
         <input type="hidden" name="_editing" value="">
         <div class="admin-form-grid">
           <label>Club<select name="club_id" required></select></label>
           <label>Player Name<input name="player_name" required></label>
           <label>Jersey No.<input name="jersey_no" type="number" min="1"></label>
+          <label>Photo<input type="file" name="photo" id="squadPhotoInput" accept="image/*"></label>
         </div>
         <div class="admin-form-actions">
           <button type="submit" class="btn solid">Add Player</button>
           <button type="button" class="btn" data-cancel-edit style="display:none;">Cancel Edit</button>
         </div>
+        <p id="squadUploadStatus" class="admin-hint"></p>
       </form>
       <div class="admin-table-wrap"><table class="admin-table" id="table-squads"></table></div>
     </section>

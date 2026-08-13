@@ -288,11 +288,15 @@ function viewClubDetail(id){
 
     <h3 style="margin-top:36px;font-size:1.25rem;">Squad</h3>
     ${squad ? `
-    <div class="table-scroll">
-      <table class="squad" style="margin-top:14px;min-width:320px;">
-        <thead><tr><th>#</th><th>Name</th></tr></thead>
-        <tbody>${squad.map(p=>`<tr><td>${p.num}</td><td style="font-family:'Poppins';">${p.name}</td></tr>`).join('')}</tbody>
-      </table>
+    <div class="squad-grid">
+      ${squad.map(p=>`
+        <div class="squad-card">
+          ${p.photo
+            ? `<img class="squad-photo" src="${p.photo}" alt="${esc(p.name)}" loading="lazy">`
+            : `<div class="squad-photo squad-photo-fallback">${esc((p.name||'').split(/\s+/).filter(w=>w.length).slice(0,2).map(w=>w[0]).join('').toUpperCase())}</div>`}
+          <div class="squad-name">${esc(p.name)}</div>
+          ${p.num ? `<div class="squad-num">#${p.num}</div>` : ''}
+        </div>`).join('')}
     </div>` : `<p style="color:var(--ivory-dim);margin-top:14px;">Squad list coming soon.</p>`}
 
     ${clubFixtures.length ? `
