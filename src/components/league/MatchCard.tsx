@@ -18,6 +18,20 @@ export function MatchCard({ fixture, data }: { fixture: Fixture; data: LeagueDat
         <Row club={away} score={fixture.away_score} />
       </div>
       {fixture.venue && <p className="mt-3 text-xs text-muted-foreground">{fixture.venue}</p>}
+      {played && (fixture.match_official || fixture.man_of_the_match) && (
+        <div className="mt-3 grid gap-1 border-t border-border pt-3 text-xs text-muted-foreground">
+          {fixture.match_official && (
+            <p>
+              <span className="font-semibold text-foreground">Match official:</span> {fixture.match_official}
+            </p>
+          )}
+          {fixture.man_of_the_match && (
+            <p>
+              <span className="font-semibold text-foreground">Man of the Match:</span> {fixture.man_of_the_match}
+            </p>
+          )}
+        </div>
+      )}
     </article>
   );
 }

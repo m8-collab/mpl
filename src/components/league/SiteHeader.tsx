@@ -11,6 +11,7 @@ const NAV = [
   { to: "/fixtures", label: "Fixtures" },
   { to: "/clubs", label: "Clubs" },
   { to: "/scorers", label: "Scorers" },
+  { to: "/discipline", label: "Discipline" },
   { to: "/news", label: "News" },
   { to: "/gallery", label: "Gallery" },
   { to: "/about", label: "About" },

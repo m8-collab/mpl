@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export type FieldType = "text" | "number" | "date" | "time" | "textarea" | "select";
+export type FieldType = "text" | "number" | "date" | "time" | "textarea" | "select" | "boolean";
 
 export type FieldDef = {
   name: string;
@@ -36,6 +36,8 @@ export type EntityConfig = {
   primaryKey: string;
   fields: FieldDef[];
   numericFields?: string[];
+  /** Fields whose form value ("true"/"false" string) should be stored as an actual boolean. */
+  booleanFields?: string[];
   /** Called right before insert to fill in derived fields, e.g. fixtures.id from match_no. */
   beforeInsert?: (payload: Record<string, any>) => Record<string, any>;
   orderBy?: { column: string; ascending?: boolean };
@@ -105,6 +107,9 @@ export function EntityManager({
     (config.numericFields ?? []).forEach((f) => {
       if (clean[f] !== null && clean[f] !== undefined) clean[f] = Number(clean[f]);
     });
+    (config.booleanFields ?? []).forEach((f) => {
+      clean[f] = clean[f] === "true" || clean[f] === true;
+    });
 
     let error;
     if (editingId !== null) {
@@ -164,9 +169,9 @@ export function EntityManager({
                     onChange={(e) => setPayload((p) => ({ ...p, [f.name]: e.target.value }))}
                     required={f.required}
                   />
-                ) : f.type === "select" ? (
+                ) : f.type === "select" || f.type === "boolean" ? (
                   <Select
-                    value={payload[f.name] ? String(payload[f.name]) : ""}
+                    value={payload[f.name] !== "" && payload[f.name] !== undefined ? String(payload[f.name]) : f.type === "boolean" ? "false" : ""}
                     onValueChange={(v) => setPayload((p) => ({ ...p, [f.name]: v }))}
                     disabled={editingId !== null && f.lockOnEdit}
                   >
@@ -174,7 +179,13 @@ export function EntityManager({
                       <SelectValue placeholder={`Select ${f.label.toLowerCase()}…`} />
                     </SelectTrigger>
                     <SelectContent>
-                      {(f.options ?? []).map((o) => (
+                      {(f.type === "boolean"
+                        ? [
+                            { value: "false", label: "No" },
+                            { value: "true", label: "Yes" },
+                          ]
+                        : (f.options ?? [])
+                      ).map((o) => (
                         <SelectItem key={o.value} value={o.value}>
                           {o.label}
                         </SelectItem>
@@ -236,7 +247,11 @@ export function EntityManager({
                       <TableCell key={f.name} className="max-w-[220px] truncate">
                         {f.type === "select"
                           ? f.options?.find((o) => o.value === row[f.name])?.label ?? row[f.name] ?? "—"
-                          : String(row[f.name] ?? "—")}
+                          : f.type === "boolean"
+                            ? row[f.name]
+                              ? "Yes"
+                              : "No"
+                            : String(row[f.name] ?? "—")}
                       </TableCell>
                     ))}
                     <TableCell className="text-right">

@@ -34,7 +34,85 @@ export type Fixture = {
   kickoff: string | null;
   home_score: number | null;
   away_score: number | null;
+  match_official: string | null;
+  man_of_the_match: string | null;
+  home_lineup: string | null;
+  away_lineup: string | null;
 };
+
+export type CardType = "yellow" | "red";
+
+export type CardEntry = {
+  id: number;
+  fixture_id: string | null;
+  club_id: string | null;
+  player_name: string;
+  card_type: CardType;
+  red_via_two_yellows: boolean;
+  created_at: string;
+};
+
+export type Sponsor = {
+  id: number;
+  name: string;
+  logo_url: string | null;
+  link: string | null;
+  sort_order: number;
+};
+
+/**
+ * A player's disciplinary standing, derived from `cards`.
+ *
+ * Standard football convention (flipped from the original rule-book
+ * reading, which had these reversed):
+ *  - 5 yellow cards picked up across the season triggers a 1-match ban.
+ *  - Any red card (direct, or via a 2nd yellow in the same match)
+ *    triggers a 3-match ban.
+ */
+export type PlayerDiscipline = {
+  playerName: string;
+  clubId: string | null;
+  yellowCount: number;
+  redCount: number;
+  banMatches: number;
+  banReason: string | null;
+};
+
+const YELLOW_THRESHOLD = 5;
+const YELLOW_BAN_MATCHES = 1;
+const RED_BAN_MATCHES = 3;
+
+export function computeDiscipline(cards: CardEntry[]): PlayerDiscipline[] {
+  const byPlayer = new Map<string, PlayerDiscipline>();
+  for (const c of cards) {
+    const key = `${c.club_id ?? ""}::${c.player_name}`;
+    const entry = byPlayer.get(key) ?? {
+      playerName: c.player_name,
+      clubId: c.club_id,
+      yellowCount: 0,
+      redCount: 0,
+      banMatches: 0,
+      banReason: null,
+    };
+    if (c.card_type === "yellow") entry.yellowCount += 1;
+    if (c.card_type === "red") entry.redCount += 1;
+    byPlayer.set(key, entry);
+  }
+
+  for (const entry of byPlayer.values()) {
+    if (entry.redCount > 0) {
+      entry.banMatches = RED_BAN_MATCHES;
+      entry.banReason = `Red card — ${RED_BAN_MATCHES}-match ban`;
+    } else if (entry.yellowCount >= YELLOW_THRESHOLD) {
+      entry.banMatches = YELLOW_BAN_MATCHES;
+      entry.banReason = `${YELLOW_THRESHOLD} yellow cards — ${YELLOW_BAN_MATCHES}-match ban`;
+    }
+  }
+
+  return [...byPlayer.values()].sort(
+    (a, b) => b.banMatches - a.banMatches || b.yellowCount + b.redCount - (a.yellowCount + a.redCount),
+  );
+}
 
 export type Scorer = {
   id: number;
@@ -63,6 +141,7 @@ export type Album = {
   name: string;
   description: string | null;
   sort_order: number;
+  fixture_id: string | null;
 };
 
 export type Photo = {
@@ -76,6 +155,8 @@ export type Photo = {
 export type LeagueData = {
   seasonLabel: string;
   asOfLabel: string;
+  editionLabel: string;
+  socialLinks: { facebook: string | null; instagram: string | null; twitter: string | null; whatsapp: string | null };
   clubs: Club[];
   clubMap: Record<string, Club>;
   standings: Standing[];
@@ -85,21 +166,37 @@ export type LeagueData = {
   news: NewsItem[];
   albums: Album[];
   photos: Photo[];
+  cards: CardEntry[];
+  discipline: PlayerDiscipline[];
+  sponsors: Sponsor[];
 };
 
 export async function fetchLeague(): Promise<LeagueData> {
-  const [clubsRes, rowsRes, fixturesRes, scorersRes, squadsRes, newsRes, albumsRes, photosRes, settingsRes] =
-    await Promise.all([
-      supabase.from("clubs").select("*").order("name"),
-      supabase.from("table_rows").select("*"),
-      supabase.from("fixtures").select("*").order("date"),
-      supabase.from("scorers").select("*").order("goals", { ascending: false }),
-      supabase.from("squads").select("*").order("jersey_no"),
-      supabase.from("news").select("*").order("created_at", { ascending: false }),
-      supabase.from("albums").select("*").order("sort_order"),
-      supabase.from("gallery").select("*").order("sort_order"),
-      supabase.from("settings").select("*").eq("id", 1).maybeSingle(),
-    ]);
+  const [
+    clubsRes,
+    rowsRes,
+    fixturesRes,
+    scorersRes,
+    squadsRes,
+    newsRes,
+    albumsRes,
+    photosRes,
+    settingsRes,
+    cardsRes,
+    sponsorsRes,
+  ] = await Promise.all([
+    supabase.from("clubs").select("*").order("name"),
+    supabase.from("table_rows").select("*"),
+    supabase.from("fixtures").select("*").order("date"),
+    supabase.from("scorers").select("*").order("goals", { ascending: false }),
+    supabase.from("squads").select("*").order("jersey_no"),
+    supabase.from("news").select("*").order("created_at", { ascending: false }),
+    supabase.from("albums").select("*").order("sort_order"),
+    supabase.from("gallery").select("*").order("sort_order"),
+    supabase.from("settings").select("*").eq("id", 1).maybeSingle(),
+    supabase.from("cards").select("*").order("created_at", { ascending: false }),
+    supabase.from("sponsors").select("*").order("sort_order"),
+  ]);
 
   const clubs = (clubsRes.data ?? []) as Club[];
   const clubMap: Record<string, Club> = {};
@@ -123,9 +220,18 @@ export async function fetchLeague(): Promise<LeagueData> {
     (squads[p.club_id] ??= []).push(p);
   });
 
+  const cards = (cardsRes.data ?? []) as CardEntry[];
+
   return {
     seasonLabel: settingsRes.data?.season_label ?? "Season 2026",
     asOfLabel: settingsRes.data?.as_of_label ?? "",
+    editionLabel: settingsRes.data?.edition_label ?? "5th Edition",
+    socialLinks: {
+      facebook: settingsRes.data?.facebook_url ?? null,
+      instagram: settingsRes.data?.instagram_url ?? null,
+      twitter: settingsRes.data?.twitter_url ?? null,
+      whatsapp: settingsRes.data?.whatsapp_url ?? null,
+    },
     clubs,
     clubMap,
     standings,
@@ -135,6 +241,9 @@ export async function fetchLeague(): Promise<LeagueData> {
     news: (newsRes.data ?? []) as NewsItem[],
     albums: (albumsRes.data ?? []) as Album[],
     photos: (photosRes.data ?? []) as Photo[],
+    cards,
+    discipline: computeDiscipline(cards),
+    sponsors: (sponsorsRes.data ?? []) as Sponsor[],
   };
 }
 

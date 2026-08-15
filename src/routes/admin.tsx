@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EntityManager, type EntityConfig } from "@/components/admin/EntityManager";
 import { SquadsManager, GalleryManager } from "@/components/admin/UploadManagers";
+import { MatchOfficialDashboard } from "@/components/admin/MatchOfficialDashboard";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -346,6 +347,20 @@ function Dashboard({ session }: { session: Session }) {
       { name: "venue", label: "Venue", type: "text" },
       { name: "home_score", label: "Home score", type: "number" },
       { name: "away_score", label: "Away score", type: "number" },
+      { name: "match_official", label: "Match official (referee)", type: "text", showInList: false },
+      { name: "man_of_the_match", label: "Man of the Match", type: "text", showInList: false, placeholder: "Player with the standout performance in this game" },
+      {
+        name: "home_lineup",
+        label: "Home lineup (starting XI + subs, one per line)",
+        type: "textarea",
+        showInList: false,
+      },
+      {
+        name: "away_lineup",
+        label: "Away lineup (starting XI + subs, one per line)",
+        type: "textarea",
+        showInList: false,
+      },
     ],
     numericFields: ["home_score", "away_score"],
     beforeInsert: (payload) => ({ ...payload, id: payload.id || `m${payload.match_no}` }),
@@ -361,6 +376,52 @@ function Dashboard({ session }: { session: Session }) {
       { name: "goals", label: "Goals", type: "number" },
     ],
     numericFields: ["goals"],
+  };
+
+  const fixtureOptions = (data?.fixtures ?? [])
+    .slice()
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map((f) => ({
+      value: f.id,
+      label: `${f.match_no ? `#${f.match_no} · ` : ""}${data?.clubMap[f.home_id ?? ""]?.name ?? "TBC"} v ${
+        data?.clubMap[f.away_id ?? ""]?.name ?? "TBC"
+      } (${f.date})`,
+    }));
+
+  const cardsConfig: EntityConfig = {
+    table: "cards",
+    primaryKey: "id",
+    orderBy: { column: "created_at", ascending: false },
+    fields: [
+      { name: "fixture_id", label: "Match", type: "select", options: fixtureOptions, required: true },
+      { name: "club_id", label: "Club", type: "select", options: clubOptions, required: true },
+      { name: "player_name", label: "Player", type: "text", required: true },
+      {
+        name: "card_type",
+        label: "Card",
+        type: "select",
+        required: true,
+        options: [
+          { value: "yellow", label: "Yellow" },
+          { value: "red", label: "Red" },
+        ],
+      },
+      { name: "red_via_two_yellows", label: "Red via 2nd yellow?", type: "boolean" },
+    ],
+    booleanFields: ["red_via_two_yellows"],
+  };
+
+  const sponsorsConfig: EntityConfig = {
+    table: "sponsors",
+    primaryKey: "id",
+    orderBy: { column: "sort_order" },
+    fields: [
+      { name: "name", label: "Sponsor name", type: "text", required: true },
+      { name: "logo_url", label: "Logo image URL", type: "text" },
+      { name: "link", label: "Website / social link", type: "text" },
+      { name: "sort_order", label: "Order", type: "number" },
+    ],
+    numericFields: ["sort_order"],
   };
 
   const newsConfig: EntityConfig = {
@@ -380,6 +441,11 @@ function Dashboard({ session }: { session: Session }) {
     fields: [
       { name: "season_label", label: "Season label", type: "text" },
       { name: "as_of_label", label: "\"As of\" label", type: "text" },
+      { name: "edition_label", label: "Edition (used in footer copyright, e.g. \"5th Edition\")", type: "text" },
+      { name: "facebook_url", label: "Facebook URL", type: "text" },
+      { name: "instagram_url", label: "Instagram URL", type: "text" },
+      { name: "twitter_url", label: "Twitter / X URL", type: "text" },
+      { name: "whatsapp_url", label: "WhatsApp link", type: "text" },
     ],
   };
 
@@ -396,24 +462,34 @@ function Dashboard({ session }: { session: Session }) {
         </Button>
       </div>
 
-      <Tabs defaultValue="clubs">
+      <Tabs defaultValue="match-official">
         <TabsList className="flex h-auto flex-wrap justify-start gap-1">
+          <TabsTrigger value="match-official">Match Official</TabsTrigger>
           <TabsTrigger value="clubs">Clubs</TabsTrigger>
           <TabsTrigger value="table">Table</TabsTrigger>
           <TabsTrigger value="fixtures">Fixtures</TabsTrigger>
           <TabsTrigger value="scorers">Scorers</TabsTrigger>
           <TabsTrigger value="squads">Squads</TabsTrigger>
+          <TabsTrigger value="cards">Discipline</TabsTrigger>
           <TabsTrigger value="news">News</TabsTrigger>
           <TabsTrigger value="gallery">Gallery</TabsTrigger>
+          <TabsTrigger value="sponsors">Sponsors</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
           <TabsTrigger value="admins">Admins</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="match-official" className="pt-6">
+          <MatchOfficialDashboard clubs={data?.clubs ?? []} fixtures={data?.fixtures ?? []} onChanged={refreshPublicSite} />
+        </TabsContent>
         <TabsContent value="clubs" className="pt-6">
           <EntityManager config={clubsConfig} title="Club" onChanged={refreshPublicSite} />
         </TabsContent>
         <TabsContent value="table" className="pt-6">
           <EntityManager config={tableConfig} title="Table row" onChanged={refreshPublicSite} />
+          <p className="mt-3 text-xs text-muted-foreground">
+            P/W/D/L/GF/GA are recalculated automatically from Fixtures scores whenever a fixture is saved — use this
+            tab only for one-off corrections; edits here get overwritten on the next fixture change.
+          </p>
         </TabsContent>
         <TabsContent value="fixtures" className="pt-6">
           <EntityManager config={fixturesConfig} title="Fixture" onChanged={refreshPublicSite} />
@@ -424,11 +500,21 @@ function Dashboard({ session }: { session: Session }) {
         <TabsContent value="squads" className="pt-6">
           <SquadsManager clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
         </TabsContent>
+        <TabsContent value="cards" className="pt-6">
+          <EntityManager config={cardsConfig} title="Card" onChanged={refreshPublicSite} />
+          <p className="mt-3 text-xs text-muted-foreground">
+            5 yellow cards in the season = 1-match ban. Any red card (direct, or a 2nd yellow) = 3-match ban. See the
+            public Discipline page for the live ban list.
+          </p>
+        </TabsContent>
         <TabsContent value="news" className="pt-6">
           <EntityManager config={newsConfig} title="News post" onChanged={refreshPublicSite} />
         </TabsContent>
         <TabsContent value="gallery" className="pt-6">
           <GalleryManager onChanged={refreshPublicSite} />
+        </TabsContent>
+        <TabsContent value="sponsors" className="pt-6">
+          <EntityManager config={sponsorsConfig} title="Sponsor" onChanged={refreshPublicSite} />
         </TabsContent>
         <TabsContent value="settings" className="pt-6">
           <SettingsPanel config={settingsConfig} onChanged={refreshPublicSite} />

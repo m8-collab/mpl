@@ -39,6 +39,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          fixture_id: string | null
           id: number
           name: string
           sort_order: number
@@ -46,6 +47,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          fixture_id?: string | null
           id?: number
           name: string
           sort_order?: number
@@ -53,11 +55,20 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          fixture_id?: string | null
           id?: number
           name?: string
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "albums_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixtures"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clubs: {
         Row: {
@@ -83,35 +94,47 @@ export type Database = {
       fixtures: {
         Row: {
           away_id: string | null
+          away_lineup: string | null
           away_score: number | null
           date: string
           home_id: string | null
+          home_lineup: string | null
           home_score: number | null
           id: string
           kickoff: string | null
+          man_of_the_match: string | null
           match_no: string | null
+          match_official: string | null
           venue: string | null
         }
         Insert: {
           away_id?: string | null
+          away_lineup?: string | null
           away_score?: number | null
           date: string
           home_id?: string | null
+          home_lineup?: string | null
           home_score?: number | null
           id: string
           kickoff?: string | null
+          man_of_the_match?: string | null
           match_no?: string | null
+          match_official?: string | null
           venue?: string | null
         }
         Update: {
           away_id?: string | null
+          away_lineup?: string | null
           away_score?: number | null
           date?: string
           home_id?: string | null
+          home_lineup?: string | null
           home_score?: number | null
           id?: string
           kickoff?: string | null
+          man_of_the_match?: string | null
           match_no?: string | null
+          match_official?: string | null
           venue?: string | null
         }
         Relationships: [
@@ -222,18 +245,102 @@ export type Database = {
       settings: {
         Row: {
           as_of_label: string | null
+          edition_label: string | null
+          facebook_url: string | null
           id: number
+          instagram_url: string | null
           season_label: string | null
+          twitter_url: string | null
+          whatsapp_url: string | null
         }
         Insert: {
           as_of_label?: string | null
+          edition_label?: string | null
+          facebook_url?: string | null
           id?: number
+          instagram_url?: string | null
           season_label?: string | null
+          twitter_url?: string | null
+          whatsapp_url?: string | null
         }
         Update: {
           as_of_label?: string | null
+          edition_label?: string | null
+          facebook_url?: string | null
           id?: number
+          instagram_url?: string | null
           season_label?: string | null
+          twitter_url?: string | null
+          whatsapp_url?: string | null
+        }
+        Relationships: []
+      }
+      cards: {
+        Row: {
+          card_type: string
+          club_id: string | null
+          created_at: string
+          fixture_id: string | null
+          id: number
+          player_name: string
+          red_via_two_yellows: boolean
+        }
+        Insert: {
+          card_type: string
+          club_id?: string | null
+          created_at?: string
+          fixture_id?: string | null
+          id?: number
+          player_name: string
+          red_via_two_yellows?: boolean
+        }
+        Update: {
+          card_type?: string
+          club_id?: string | null
+          created_at?: string
+          fixture_id?: string | null
+          id?: number
+          player_name?: string
+          red_via_two_yellows?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cards_fixture_id_fkey"
+            columns: ["fixture_id"]
+            isOneToOne: false
+            referencedRelation: "fixtures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsors: {
+        Row: {
+          id: number
+          link: string | null
+          logo_url: string | null
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          id?: number
+          link?: string | null
+          logo_url?: string | null
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          id?: number
+          link?: string | null
+          logo_url?: string | null
+          name?: string
+          sort_order?: number
         }
         Relationships: []
       }

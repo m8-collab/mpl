@@ -10,8 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as FixturesRouteImport } from './routes/fixtures'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as NewsRouteImport } from './routes/news'
@@ -26,14 +26,14 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FixturesRoute = FixturesRouteImport.update({
@@ -79,8 +79,8 @@ const ClubsClubIdRoute = ClubsClubIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
   '/fixtures': typeof FixturesRoute
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
@@ -92,8 +92,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
   '/fixtures': typeof FixturesRoute
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
@@ -106,8 +106,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
   '/fixtures': typeof FixturesRoute
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
@@ -121,8 +121,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/admin'
     | '/about'
+    | '/admin'
     | '/fixtures'
     | '/gallery'
     | '/news'
@@ -134,8 +134,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/about'
+    | '/admin'
     | '/fixtures'
     | '/gallery'
     | '/news'
@@ -147,8 +147,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/admin'
     | '/about'
+    | '/admin'
     | '/fixtures'
     | '/gallery'
     | '/news'
@@ -161,8 +161,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRoute
   FixturesRoute: typeof FixturesRoute
   GalleryRoute: typeof GalleryRoute
   NewsRoute: typeof NewsRoute
@@ -182,18 +182,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/about': {
       id: '/about'
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fixtures': {
@@ -257,8 +257,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRoute,
   FixturesRoute: FixturesRoute,
   GalleryRoute: GalleryRoute,
   NewsRoute: NewsRoute,
