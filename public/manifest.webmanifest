@@ -1,0 +1,17 @@
+{
+  "name": "Mtwapa Premier League",
+  "short_name": "MPL",
+  "description": "Live table, fixtures, results, squads, discipline and top scorers from the Mtwapa Premier League.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#120a1a",
+  "theme_color": "#241131",
+  "categories": ["sports"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
