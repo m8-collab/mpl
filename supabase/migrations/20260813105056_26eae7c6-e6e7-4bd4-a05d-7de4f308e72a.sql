@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.is_approved_admin() FROM PUBLIC, anon, authenticated;
