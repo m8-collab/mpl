@@ -156,3 +156,27 @@ illegible and it reads as a colored blob, same as most detailed crests
 do at that size. If you get a cleaner/higher-res version of just the
 crest (no banner/text around it) at some point, swap it in for a
 sharper result, especially at small sizes.
+
+## Sidebar dashboard redesign (19 Aug)
+
+Recreated /admin and /officials in the CoachPro-style layout you shared
+(rounded glass cards, icon sidebar, greeting header, stat cards) instead
+of the old top-tab layout. New shared shell:
+`src/components/admin/DashboardShell.tsx` (`DashboardShell`, `StatCard`,
+`DashCard`), plus a `dash-shell` background utility in `styles.css`.
+
+The two portals share the same visual language on purpose, but are
+styled with different accents (admin = the site's pink/purple accent
+gradient; officials = mint) and different brand labels in the sidebar
+("MPL Admin" vs "Match Officials"), plus each has its own Dashboard
+overview page — admin's shows total clubs/matches played/leading
+scorer/table leader plus a standings preview; officials' shows fixtures
+still needing a report plus the next one due. This is on top of the
+role-based access split from before (still enforced by
+`restrict-match-official-role.sql`) — the redesign is cosmetic
+separation, the RLS policies are the real separation.
+
+All the existing admin functionality (EntityManager sections, PDF
+import, squads/gallery upload, settings, admin approval) is unchanged —
+only the navigation chrome around it changed, from tabs to a sidebar
+with a section-switching Dashboard state.

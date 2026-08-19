@@ -9,10 +9,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EntityManager, type EntityConfig } from "@/components/admin/EntityManager";
 import { FixturePdfImport, ScorersPdfImport } from "@/components/admin/PdfImportManagers";
+import { DashboardShell, StatCard, DashCard, type NavItem } from "@/components/admin/DashboardShell";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Shield,
+  ListOrdered,
+  CalendarDays,
+  Target,
+  Users,
+  AlertTriangle,
+  Newspaper,
+  Image as ImageIcon,
+  Handshake,
+  Settings as SettingsIcon,
+  UserCog,
+  Trophy,
+  Goal,
+} from "lucide-react";
 import { SquadsManager, GalleryManager } from "@/components/admin/UploadManagers";
 import { MatchOfficialDashboard } from "@/components/admin/MatchOfficialDashboard";
 
@@ -74,7 +91,7 @@ function AdminPage() {
   }, []);
 
   return (
-    <div className="mx-auto min-h-[70vh] max-w-6xl px-4 py-10 lg:px-8">
+    <div className={screen === "dashboard" ? "min-h-[70vh]" : "mx-auto min-h-[70vh] max-w-6xl px-4 py-10 lg:px-8"}>
       <Toaster richColors position="top-right" />
       {screen === "loading" && <p className="text-sm text-muted-foreground">Loading…</p>}
       {screen === "login" && <LoginCard onRegister={() => setScreen("register")} onForgot={() => setScreen("forgot")} />}
@@ -324,6 +341,7 @@ function OfficialRedirectCard() {
 function Dashboard({ session }: { session: Session }) {
   const queryClient = useQueryClient();
   const { data } = useQuery(leagueQuery);
+  const [section, setSection] = useState("overview");
 
   const clubOptions = (data?.clubs ?? []).map((c) => ({ value: c.id, label: c.name }));
 
@@ -478,84 +496,156 @@ function Dashboard({ session }: { session: Session }) {
     ],
   };
 
+  const navItems: NavItem[] = [
+    { id: "overview", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+    { id: "match-official", label: "Match Official", icon: <ClipboardList size={18} /> },
+    { id: "clubs", label: "Clubs", icon: <Shield size={18} /> },
+    { id: "table", label: "Table", icon: <ListOrdered size={18} /> },
+    { id: "fixtures", label: "Fixtures", icon: <CalendarDays size={18} /> },
+    { id: "scorers", label: "Scorers", icon: <Target size={18} /> },
+    { id: "squads", label: "Squads", icon: <Users size={18} /> },
+    { id: "cards", label: "Discipline", icon: <AlertTriangle size={18} /> },
+    { id: "news", label: "News", icon: <Newspaper size={18} /> },
+    { id: "gallery", label: "Gallery", icon: <ImageIcon size={18} /> },
+    { id: "sponsors", label: "Sponsors", icon: <Handshake size={18} /> },
+    { id: "settings", label: "Settings", icon: <SettingsIcon size={18} /> },
+    { id: "admins", label: "Admins", icon: <UserCog size={18} /> },
+  ];
+
+  const nextFixture = (data?.fixtures ?? [])
+    .filter((f) => f.home_score === null || f.away_score === null)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+
+  const topScorer = (data?.scorers ?? []).slice().sort((a, b) => b.goals - a.goals)[0];
+  const leader = data?.standings?.[0];
+  const matchesPlayed = (data?.standings ?? []).reduce((sum, r) => sum + r.p, 0) / 2;
+
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="eyebrow text-accent">Admin</p>
-          <h1 className="mt-1 font-display text-2xl font-black lg:text-3xl">Manage the site</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Signed in as {session.user.email}</p>
+    <DashboardShell
+      portal="admin"
+      brand="MPL Admin"
+      navItems={navItems}
+      activeId={section}
+      onSelect={setSection}
+      userEmail={session.user.email ?? ""}
+      onSignOut={() => supabase.auth.signOut()}
+      greeting="Welcome back"
+      title={navItems.find((n) => n.id === section)?.label ?? "Dashboard"}
+    >
+      {section === "overview" && (
+        <div className="grid gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCard label="Total clubs" value={String(data?.clubs.length ?? 0)} icon={<Shield size={18} className="text-white" />} tint="oklch(0.63 0.25 5)" />
+            <StatCard label="Matches played" value={String(matchesPlayed)} icon={<CalendarDays size={18} className="text-white" />} tint="oklch(0.55 0.2 330)" />
+            <StatCard
+              label="Leading scorer"
+              value={topScorer ? `${topScorer.player_name} · ${topScorer.goals}` : "—"}
+              icon={<Goal size={18} className="text-white" />}
+              tint="oklch(0.6 0.16 158)"
+            />
+            <StatCard
+              label="Table leader"
+              value={leader ? `${leader.club.name} · ${leader.pts}pts` : "—"}
+              icon={<Trophy size={18} className="text-white" />}
+              tint="oklch(0.7 0.18 80)"
+            />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <DashCard title="Next fixture needing a result" action={<button onClick={() => setSection("fixtures")} className="text-xs font-semibold text-accent hover:underline">View all</button>}>
+              {nextFixture ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">{nextFixture.date} {nextFixture.kickoff ?? ""}</p>
+                    <p className="mt-1 font-display text-base font-bold">
+                      {data?.clubMap[nextFixture.home_id ?? ""]?.name ?? "TBC"} vs {data?.clubMap[nextFixture.away_id ?? ""]?.name ?? "TBC"}
+                    </p>
+                    {nextFixture.venue && <p className="text-xs text-muted-foreground">{nextFixture.venue}</p>}
+                  </div>
+                  <button
+                    onClick={() => setSection("match-official")}
+                    className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground"
+                  >
+                    File report
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">All fixtures have results. Nice.</p>
+              )}
+            </DashCard>
+
+            <DashCard title="Standings" action={<button onClick={() => setSection("table")} className="text-xs font-semibold text-accent hover:underline">View all</button>}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-[0.65rem] uppercase text-muted-foreground">
+                      <th className="pb-2 pr-2">#</th>
+                      <th className="pb-2 pr-2">Club</th>
+                      <th className="pb-2 pr-2 text-right">MP</th>
+                      <th className="pb-2 pr-2 text-right">GD</th>
+                      <th className="pb-2 text-right">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data?.standings ?? []).slice(0, 6).map((r) => (
+                      <tr key={r.club_id} className="border-t border-border/60">
+                        <td className="py-2 pr-2 text-muted-foreground">{r.rank}</td>
+                        <td className="py-2 pr-2 font-semibold">{r.club.name}</td>
+                        <td className="py-2 pr-2 text-right">{r.p}</td>
+                        <td className="py-2 pr-2 text-right">{r.gd}</td>
+                        <td className="py-2 text-right font-bold">{r.pts}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </DashCard>
+          </div>
         </div>
-        <Button variant="outline" onClick={() => supabase.auth.signOut()}>
-          Sign out
-        </Button>
-      </div>
+      )}
 
-      <Tabs defaultValue="match-official">
-        <TabsList className="flex h-auto flex-wrap justify-start gap-1">
-          <TabsTrigger value="match-official">Match Official</TabsTrigger>
-          <TabsTrigger value="clubs">Clubs</TabsTrigger>
-          <TabsTrigger value="table">Table</TabsTrigger>
-          <TabsTrigger value="fixtures">Fixtures</TabsTrigger>
-          <TabsTrigger value="scorers">Scorers</TabsTrigger>
-          <TabsTrigger value="squads">Squads</TabsTrigger>
-          <TabsTrigger value="cards">Discipline</TabsTrigger>
-          <TabsTrigger value="news">News</TabsTrigger>
-          <TabsTrigger value="gallery">Gallery</TabsTrigger>
-          <TabsTrigger value="sponsors">Sponsors</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="admins">Admins</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="match-official" className="pt-6">
-          <MatchOfficialDashboard clubs={data?.clubs ?? []} fixtures={data?.fixtures ?? []} onChanged={refreshPublicSite} />
-        </TabsContent>
-        <TabsContent value="clubs" className="pt-6">
-          <EntityManager config={clubsConfig} title="Club" onChanged={refreshPublicSite} />
-        </TabsContent>
-        <TabsContent value="table" className="pt-6">
+      {section === "match-official" && (
+        <MatchOfficialDashboard clubs={data?.clubs ?? []} fixtures={data?.fixtures ?? []} onChanged={refreshPublicSite} />
+      )}
+      {section === "clubs" && <EntityManager config={clubsConfig} title="Club" onChanged={refreshPublicSite} />}
+      {section === "table" && (
+        <>
           <EntityManager config={tableConfig} title="Table row" onChanged={refreshPublicSite} />
           <p className="mt-3 text-xs text-muted-foreground">
             P/W/D/L/GF/GA are recalculated automatically from Fixtures scores whenever a fixture is saved — this tab
             is for one-off corrections and for "Points adjustment" (e.g. a disciplinary deduction), which is the
             only field here that survives a recalc.
           </p>
-        </TabsContent>
-        <TabsContent value="fixtures" className="pt-6">
+        </>
+      )}
+      {section === "fixtures" && (
+        <>
           <FixturePdfImport clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
           <EntityManager config={fixturesConfig} title="Fixture" onChanged={refreshPublicSite} />
-        </TabsContent>
-        <TabsContent value="scorers" className="pt-6">
+        </>
+      )}
+      {section === "scorers" && (
+        <>
           <ScorersPdfImport clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
           <EntityManager config={scorersConfig} title="Scorer" onChanged={refreshPublicSite} />
-        </TabsContent>
-        <TabsContent value="squads" className="pt-6">
-          <SquadsManager clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
-        </TabsContent>
-        <TabsContent value="cards" className="pt-6">
+        </>
+      )}
+      {section === "squads" && <SquadsManager clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />}
+      {section === "cards" && (
+        <>
           <EntityManager config={cardsConfig} title="Card" onChanged={refreshPublicSite} />
           <p className="mt-3 text-xs text-muted-foreground">
             5 yellow cards in the season = 1-match ban. Any red card (direct, or a 2nd yellow) = 3-match ban. See the
             public Discipline page for the live ban list.
           </p>
-        </TabsContent>
-        <TabsContent value="news" className="pt-6">
-          <EntityManager config={newsConfig} title="News post" onChanged={refreshPublicSite} />
-        </TabsContent>
-        <TabsContent value="gallery" className="pt-6">
-          <GalleryManager onChanged={refreshPublicSite} />
-        </TabsContent>
-        <TabsContent value="sponsors" className="pt-6">
-          <EntityManager config={sponsorsConfig} title="Sponsor" onChanged={refreshPublicSite} />
-        </TabsContent>
-        <TabsContent value="settings" className="pt-6">
-          <SettingsPanel config={settingsConfig} onChanged={refreshPublicSite} />
-        </TabsContent>
-        <TabsContent value="admins" className="pt-6">
-          <AdminsPanel currentUserId={session.user.id} />
-        </TabsContent>
-      </Tabs>
-    </div>
+        </>
+      )}
+      {section === "news" && <EntityManager config={newsConfig} title="News post" onChanged={refreshPublicSite} />}
+      {section === "gallery" && <GalleryManager onChanged={refreshPublicSite} />}
+      {section === "sponsors" && <EntityManager config={sponsorsConfig} title="Sponsor" onChanged={refreshPublicSite} />}
+      {section === "settings" && <SettingsPanel config={settingsConfig} onChanged={refreshPublicSite} />}
+      {section === "admins" && <AdminsPanel currentUserId={session.user.id} />}
+    </DashboardShell>
   );
 }
 

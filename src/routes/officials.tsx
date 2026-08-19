@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { toast, Toaster } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MatchOfficialDashboard } from "@/components/admin/MatchOfficialDashboard";
+import { DashboardShell, StatCard, DashCard, type NavItem } from "@/components/admin/DashboardShell";
+import { LayoutDashboard, ClipboardList, CalendarClock } from "lucide-react";
 
 export const Route = createFileRoute("/officials")({
   head: () => ({
@@ -65,7 +67,7 @@ function OfficialsPage() {
   }, []);
 
   return (
-    <div className="mx-auto min-h-[70vh] max-w-5xl px-4 py-10 lg:px-8">
+    <div className={screen === "dashboard" ? "min-h-[70vh]" : "mx-auto min-h-[70vh] max-w-5xl px-4 py-10 lg:px-8"}>
       <Toaster richColors position="top-right" />
       {screen === "loading" && <p className="text-sm text-muted-foreground">Loading…</p>}
       {screen === "login" && <LoginCard onRegister={() => setScreen("register")} onForgot={() => setScreen("forgot")} />}
@@ -297,20 +299,76 @@ function PendingCard() {
 
 function OfficialDashboardScreen({ session }: { session: Session }) {
   const { data } = useQuery(leagueQuery);
+  const queryClient = useQueryClient();
+  const [section, setSection] = useState("overview");
+
+  function refresh() {
+    queryClient.invalidateQueries({ queryKey: ["league"] });
+  }
+
+  const navItems: NavItem[] = [
+    { id: "overview", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+    { id: "file-report", label: "File Report", icon: <ClipboardList size={18} /> },
+  ];
+
+  const pending = (data?.fixtures ?? []).filter((f) => f.home_score === null || f.away_score === null);
+  const nextFixture = pending.slice().sort((a, b) => a.date.localeCompare(b.date))[0];
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="eyebrow text-accent">Match Officials</p>
-          <h1 className="mt-1 font-display text-2xl font-black lg:text-3xl">File a match report</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Signed in as {session.user.email}</p>
+    <DashboardShell
+      portal="official"
+      brand="Match Officials"
+      navItems={navItems}
+      activeId={section}
+      onSelect={setSection}
+      userEmail={session.user.email ?? ""}
+      onSignOut={() => supabase.auth.signOut()}
+      greeting="Welcome back"
+      title={navItems.find((n) => n.id === section)?.label ?? "Dashboard"}
+    >
+      {section === "overview" && (
+        <div className="grid gap-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+            <StatCard
+              label="Fixtures needing a report"
+              value={String(pending.length)}
+              icon={<ClipboardList size={18} className="text-[#04231a]" />}
+              tint="var(--mint)"
+            />
+            <StatCard
+              label="Total fixtures this season"
+              value={String(data?.fixtures.length ?? 0)}
+              icon={<CalendarClock size={18} className="text-[#04231a]" />}
+              tint="var(--mint)"
+            />
+          </div>
+
+          <DashCard
+            title="Next fixture to report"
+            action={
+              <button onClick={() => setSection("file-report")} className="text-xs font-semibold text-[#0a7a58] hover:underline">
+                File report
+              </button>
+            }
+          >
+            {nextFixture ? (
+              <div>
+                <p className="text-xs text-muted-foreground">{nextFixture.date} {nextFixture.kickoff ?? ""}</p>
+                <p className="mt-1 font-display text-base font-bold">
+                  {data?.clubMap[nextFixture.home_id ?? ""]?.name ?? "TBC"} vs {data?.clubMap[nextFixture.away_id ?? ""]?.name ?? "TBC"}
+                </p>
+                {nextFixture.venue && <p className="text-xs text-muted-foreground">{nextFixture.venue}</p>}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Every fixture already has a result filed. Nothing pending.</p>
+            )}
+          </DashCard>
         </div>
-        <Button variant="outline" onClick={() => supabase.auth.signOut()}>
-          Sign out
-        </Button>
-      </div>
-      <MatchOfficialDashboard clubs={data?.clubs ?? []} fixtures={data?.fixtures ?? []} onChanged={() => {}} />
-    </div>
+      )}
+
+      {section === "file-report" && (
+        <MatchOfficialDashboard clubs={data?.clubs ?? []} fixtures={data?.fixtures ?? []} onChanged={refresh} />
+      )}
+    </DashboardShell>
   );
 }

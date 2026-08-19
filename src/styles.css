@@ -192,6 +192,10 @@
   color: var(--pitch-foreground);
 }
 
+@utility dash-shell {
+  background: linear-gradient(160deg, oklch(0.94 0.03 190), oklch(0.93 0.03 280));
+}
+
 @keyframes ticker-scroll {
   from {
     transform: translateX(0);
