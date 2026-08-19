@@ -15,7 +15,6 @@ import { FixturePdfImport, ScorersPdfImport } from "@/components/admin/PdfImport
 import { DashboardShell, StatCard, DashCard, type NavItem } from "@/components/admin/DashboardShell";
 import {
   LayoutDashboard,
-  ClipboardList,
   Shield,
   ListOrdered,
   CalendarDays,
@@ -31,7 +30,6 @@ import {
   Goal,
 } from "lucide-react";
 import { SquadsManager, GalleryManager } from "@/components/admin/UploadManagers";
-import { MatchOfficialDashboard } from "@/components/admin/MatchOfficialDashboard";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -498,7 +496,6 @@ function Dashboard({ session }: { session: Session }) {
 
   const navItems: NavItem[] = [
     { id: "overview", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
-    { id: "match-official", label: "Match Official", icon: <ClipboardList size={18} /> },
     { id: "clubs", label: "Clubs", icon: <Shield size={18} /> },
     { id: "table", label: "Table", icon: <ListOrdered size={18} /> },
     { id: "fixtures", label: "Fixtures", icon: <CalendarDays size={18} /> },
@@ -562,12 +559,12 @@ function Dashboard({ session }: { session: Session }) {
                     </p>
                     {nextFixture.venue && <p className="text-xs text-muted-foreground">{nextFixture.venue}</p>}
                   </div>
-                  <button
-                    onClick={() => setSection("match-official")}
+                  <a
+                    href="/officials"
                     className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground"
                   >
-                    File report
-                  </button>
+                    Go to Match Officials
+                  </a>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">All fixtures have results. Nice.</p>
@@ -604,9 +601,6 @@ function Dashboard({ session }: { session: Session }) {
         </div>
       )}
 
-      {section === "match-official" && (
-        <MatchOfficialDashboard clubs={data?.clubs ?? []} fixtures={data?.fixtures ?? []} onChanged={refreshPublicSite} />
-      )}
       {section === "clubs" && <EntityManager config={clubsConfig} title="Club" onChanged={refreshPublicSite} />}
       {section === "table" && (
         <>
@@ -708,7 +702,7 @@ function SettingsPanel({ config, onChanged }: { config: EntityConfig; onChanged:
   );
 }
 
-type AdminRow = { user_id: string; email: string | null; approved: boolean; created_at: string };
+type AdminRow = { user_id: string; email: string | null; approved: boolean; created_at: string; role: "admin" | "match_official" };
 
 function AdminsPanel({ currentUserId }: { currentUserId: string }) {
   const [admins, setAdmins] = useState<AdminRow[]>([]);
@@ -732,49 +726,72 @@ function AdminsPanel({ currentUserId }: { currentUserId: string }) {
     await load();
   }
 
+  const fullAdmins = admins.filter((a) => a.role === "admin");
+  const officials = admins.filter((a) => a.role === "match_official");
+
+  function AccountsTable({ rows, emptyText }: { rows: AdminRow[]; emptyText: string }) {
+    if (rows.length === 0) return <p className="text-sm text-muted-foreground">{emptyText}</p>;
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Email</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((a) => (
+            <TableRow key={a.user_id}>
+              <TableCell>
+                {a.email}
+                {a.user_id === currentUserId && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+              </TableCell>
+              <TableCell>{a.approved ? "Approved" : "Pending"}</TableCell>
+              <TableCell className="text-right">
+                {a.approved ? (
+                  <Button size="sm" variant="destructive" onClick={() => setApproved(a, false)} disabled={a.user_id === currentUserId}>
+                    Revoke
+                  </Button>
+                ) : (
+                  <Button size="sm" onClick={() => setApproved(a, true)}>
+                    Approve
+                  </Button>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  }
+
+  if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="font-display text-base uppercase tracking-wide">Admin accounts</CardTitle>
-        <CardDescription>Approve new registrations or revoke an existing admin's access.</CardDescription>
-      </CardHeader>
-      <CardContent className="overflow-x-auto">
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {admins.map((a) => (
-                <TableRow key={a.user_id}>
-                  <TableCell>
-                    {a.email}
-                    {a.user_id === currentUserId && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
-                  </TableCell>
-                  <TableCell>{a.approved ? "Approved" : "Pending"}</TableCell>
-                  <TableCell className="text-right">
-                    {a.approved ? (
-                      <Button size="sm" variant="destructive" onClick={() => setApproved(a, false)} disabled={a.user_id === currentUserId}>
-                        Revoke
-                      </Button>
-                    ) : (
-                      <Button size="sm" onClick={() => setApproved(a, true)}>
-                        Approve
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+    <div className="grid gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-display text-base uppercase tracking-wide">Admin accounts</CardTitle>
+          <CardDescription>Full access — approve new registrations or revoke an existing admin's access.</CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <AccountsTable rows={fullAdmins} emptyText="No admin accounts yet." />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-display text-base uppercase tracking-wide">Match officials</CardTitle>
+          <CardDescription>
+            Restricted accounts, registered separately at <code>/officials</code> — they can only file match reports
+            there and have no access to this admin panel.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <AccountsTable rows={officials} emptyText="No match official accounts yet." />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

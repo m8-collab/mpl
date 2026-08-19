@@ -180,3 +180,17 @@ All the existing admin functionality (EntityManager sections, PDF
 import, squads/gallery upload, settings, admin approval) is unchanged —
 only the navigation chrome around it changed, from tabs to a sidebar
 with a section-switching Dashboard state.
+
+## Match Official removed from /admin entirely (19 Aug)
+
+The "Match Official" sidebar item and its filing tool are gone from
+/admin — full admins can no longer file match reports from inside the
+admin dashboard. That functionality now only exists at /officials.
+
+To satisfy "admin can see all match officials": the Admins section in
+/admin now shows two separate cards — "Admin accounts" and "Match
+officials" — pulled apart by the `role` column instead of one mixed
+list. Admins can still approve/revoke either kind of account from here,
+but the actual report-filing UI stays exclusively on the officials
+portal, matching the DB-level separation from
+`restrict-match-official-role.sql`.
