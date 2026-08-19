@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EntityManager, type EntityConfig } from "@/components/admin/EntityManager";
+import { FixturePdfImport, ScorersPdfImport } from "@/components/admin/PdfImportManagers";
 import { SquadsManager, GalleryManager } from "@/components/admin/UploadManagers";
 import { MatchOfficialDashboard } from "@/components/admin/MatchOfficialDashboard";
 
@@ -521,9 +522,11 @@ function Dashboard({ session }: { session: Session }) {
           </p>
         </TabsContent>
         <TabsContent value="fixtures" className="pt-6">
+          <FixturePdfImport clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
           <EntityManager config={fixturesConfig} title="Fixture" onChanged={refreshPublicSite} />
         </TabsContent>
         <TabsContent value="scorers" className="pt-6">
+          <ScorersPdfImport clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
           <EntityManager config={scorersConfig} title="Scorer" onChanged={refreshPublicSite} />
         </TabsContent>
         <TabsContent value="squads" className="pt-6">

@@ -54,17 +54,17 @@ export function SiteHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <header className="sticky top-0 z-50 pitch-panel">
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 lg:px-8">
-        <Link to="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
-          <span className="grid h-11 w-11 place-items-center rounded-sm bg-[var(--gradient-accent)] font-display text-sm font-black tracking-tight text-accent-foreground">
+    <header className="sticky top-0 z-50 pitch-panel pt-[env(safe-area-inset-top)]">
+      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3 lg:px-8">
+        <Link to="/" className="flex min-w-0 items-center gap-2 sm:gap-3" onClick={() => setOpen(false)}>
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-sm bg-[var(--gradient-accent)] font-display text-xs font-black tracking-tight text-accent-foreground sm:h-11 sm:w-11 sm:text-sm">
             MPL
           </span>
-          <span className="leading-none">
-            <span className="block font-display text-base font-extrabold uppercase tracking-tight">
+          <span className="min-w-0 leading-none">
+            <span className="block truncate font-display text-[0.7rem] font-extrabold uppercase tracking-tight sm:text-base">
               Mtwapa Premier League
             </span>
-            <span className="eyebrow mt-1 block text-primary-foreground/60">
+            <span className="eyebrow mt-1 hidden text-primary-foreground/60 sm:block">
               {data?.seasonLabel ?? "Season 2026"}
             </span>
           </span>
@@ -90,26 +90,29 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <InstallAppButton className="ml-auto lg:ml-2" />
+        <InstallAppButton className="ml-auto hidden shrink-0 sm:inline-flex lg:ml-2" />
 
         <button
           type="button"
           aria-label="Toggle menu"
           onClick={() => setOpen((v) => !v)}
-          className="ml-auto grid h-10 w-10 place-items-center rounded-sm border border-primary-foreground/20 text-primary-foreground lg:hidden"
+          className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-sm border border-primary-foreground/20 text-primary-foreground sm:h-10 sm:w-10 lg:hidden"
         >
           {open ? <X size={18} /> : <Menu size={18} />}
         </button>
       </div>
 
       {open && (
-        <nav className="grid gap-1 border-t border-primary-foreground/10 px-4 pb-4 lg:hidden">
+        <nav className="grid gap-1 border-t border-primary-foreground/10 px-3 pb-4 pt-2 sm:px-4 lg:hidden">
+          <div className="px-3 pb-1 pt-1 sm:hidden">
+            <InstallAppButton className="w-full justify-center" />
+          </div>
           {NAV.map((n) => (
             <Link
               key={n.to}
               to={n.to}
               onClick={() => setOpen(false)}
-              className="rounded-sm px-3 py-2 font-display text-sm font-bold uppercase text-primary-foreground/80 hover:bg-primary-foreground/10"
+              className="rounded-sm px-3 py-2.5 font-display text-sm font-bold uppercase text-primary-foreground/80 hover:bg-primary-foreground/10"
             >
               {n.label}
             </Link>

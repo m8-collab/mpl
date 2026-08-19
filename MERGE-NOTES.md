@@ -90,3 +90,69 @@ reverted to their original (broken) state — `fixtures.home_score` /
 `fix-asset-paths-for-react.sql`. Both already exist on the live database
 from when they were fixed previously, so this only matters if these files
 are ever run again from scratch.
+
+## PDF import for fixtures and scorers (18 Aug)
+
+New: `src/lib/pdf-import.ts` (text extraction via pdfjs-dist + heuristic
+parsers) and `src/components/admin/PdfImportManagers.tsx` (upload +
+editable review table + bulk save), wired into the Fixtures and Scorers
+tabs in `/admin`.
+
+Since fixture/scorer PDF formats vary by source, extraction is
+best-effort — dates, times, and club names are matched heuristically
+(known club names/ids only, no free-text guessing), and nothing gets
+written to the database until you review and confirm each row in the
+table. Rows missing a required field are highlighted so they're easy to
+spot before saving.
+
+Known limitation: this only reads text-based PDFs (a typed list, a table
+exported to PDF). A scanned/photographed page has no text layer and will
+come back empty — there's no OCR step here.
+
+Requires `pdfjs-dist` (added to package.json) — run `npm i` after pulling
+this so the new dependency actually installs.
+
+## Mobile fit + new app icon (18 Aug)
+
+**Icons:** replaced the placeholder heart icon (default from the PWA
+scaffolding, unrelated to this site) with a real MPL icon — the same
+accent gradient and "MPL" wordmark already used in the header badge,
+generated at every required size: `icon-192.png`, `icon-512.png`,
+`icon-512-maskable.png` (kept within the safe zone so Android's circular/
+squircle mask doesn't crop it), `apple-touch-icon.png`, and a proper
+multi-size `favicon.ico`. No code changes needed — `manifest.webmanifest`
+and the `<head>` links already pointed at these filenames.
+
+**Header:** was cramped on narrow phones — the brand title, "Get the
+app" button, and hamburger button could crowd the top row. Fixed by:
+shrinking the brand badge/text on small screens, truncating the title
+instead of letting it force horizontal scroll, hiding the season label
+under the title on mobile (redundant with page content), and moving
+"Get the app" out of the cramped top row into the mobile nav dropdown
+(full-width button) rather than fighting for space next to the hamburger.
+
+**Footer:** the right-hand column was still `text-right` after
+collapsing to a single column on mobile, which looked misaligned —
+now left-aligned below `lg`.
+
+**PWA safe areas:** added `viewport-fit=cover` and
+`env(safe-area-inset-top/bottom)` padding to the header and footer, so
+content doesn't sit under the notch or home-indicator bar when running
+as an installed standalone app on iOS.
+
+## Real club crest as the app icon (19 Aug)
+
+Replaced the generated "MPL" wordmark icon with your actual club crest
+(cropped from the uploaded banner — the circular badge on the left,
+padded to a square with its own navy background rather than stretched or
+cropped into a circle). Same files updated in place: `icon-192.png`,
+`icon-512.png`, `icon-512-maskable.png`, `apple-touch-icon.png`,
+`favicon.ico`.
+
+Source image was 813×259 (a banner, not a dedicated icon file), so the
+crest itself came in around 259×259 before upscaling — it holds up fine
+through 192px, but at 32px (browser tab favicon) the text becomes
+illegible and it reads as a colored blob, same as most detailed crests
+do at that size. If you get a cleaner/higher-res version of just the
+crest (no banner/text around it) at some point, swap it in for a
+sharper result, especially at small sizes.

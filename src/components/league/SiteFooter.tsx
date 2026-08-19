@@ -9,8 +9,8 @@ export function SiteFooter() {
   const hasSocial = social && (social.facebook || social.instagram || social.twitter || social.whatsapp);
 
   return (
-    <footer className="pitch-panel mt-20">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 lg:grid-cols-3 lg:px-8">
+    <footer className="pitch-panel mt-20 pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:py-12 lg:grid-cols-3 lg:px-8">
         <div>
           <div className="font-display text-lg font-extrabold uppercase">Mtwapa Premier League</div>
           <p className="mt-2 max-w-sm text-sm text-primary-foreground/70">
@@ -89,7 +89,7 @@ export function SiteFooter() {
           </Link>
         </div>
 
-        <div className="text-right">
+        <div className="text-left lg:text-right">
           <p className="eyebrow text-primary-foreground/50">
             Table, fixtures &amp; scorers {data?.asOfLabel ?? ""}
           </p>
