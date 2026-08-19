@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { Search, Bell } from "lucide-react";
+import { InstallAppButton } from "@/components/league/InstallAppButton";
 
 export type NavItem = {
   id: string;
@@ -89,6 +90,7 @@ export function DashboardShell({
               <h1 className="mt-0.5 font-display text-xl font-black tracking-tight sm:text-2xl">{title}</h1>
             </div>
             <div className="flex items-center gap-3">
+              <InstallAppButton className="hidden sm:inline-flex" />
               <button
                 type="button"
                 aria-label="Search"
@@ -122,6 +124,9 @@ export function DashboardShell({
           </div>
 
           {/* Mobile nav (sidebar becomes a horizontal scroller under lg) */}
+          <div className="mb-3 sm:hidden">
+            <InstallAppButton className="w-full justify-center" />
+          </div>
           <div className="mb-5 -mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:hidden">
             {navItems.map((item) => {
               const active = item.id === activeId;

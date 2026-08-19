@@ -194,3 +194,37 @@ list. Admins can still approve/revoke either kind of account from here,
 but the actual report-filing UI stays exclusively on the officials
 portal, matching the DB-level separation from
 `restrict-match-official-role.sql`.
+
+## Admin-created match official logins + PWA install on both dashboards (19 Aug)
+
+**Install the app from either dashboard:** the same "Get the app" button
+from the public site header is now in the DashboardShell header too
+(desktop) and above the mobile nav (phone) — since it's all one PWA,
+installing from `/officials` or `/admin` installs the exact same app
+onto the home screen.
+
+**Admin can create ready-to-use match official logins:**
+new "Create a match official login" form at the top of the Match
+officials card in `/admin` → Admins. Admin sets (or generates) an
+email + password, and the account is created *already approved* — no
+self-registration or approval step. The official can sign in at
+`/officials` immediately with those credentials.
+
+This required a new Supabase Edge Function —
+`supabase/functions/create-match-official/index.ts` — because creating
+another person's login can't be done safely from the browser (it needs
+the service-role key, which must never reach client-side code). The
+function verifies the caller is a real, approved, full admin using
+their own session first, and only then uses the service role to create
+the account and auto-approve it.
+
+**Deploy the edge function once** (needed before the "Create account"
+button in /admin will work):
+```
+supabase login
+supabase link --project-ref mtrffikgpwsigugjbnbx
+supabase functions deploy create-match-official
+```
+No manual secrets to set — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
+`SUPABASE_SERVICE_ROLE_KEY` are injected automatically by Supabase into
+every edge function's environment.

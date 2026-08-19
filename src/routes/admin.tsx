@@ -702,6 +702,90 @@ function SettingsPanel({ config, onChanged }: { config: EntityConfig; onChanged:
   );
 }
 
+function CreateOfficialForm({ onCreated }: { onCreated: () => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ email: string; password: string } | null>(null);
+
+  function generatePassword() {
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    let out = "";
+    for (let i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    setPassword(out);
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setResult(null);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Not signed in");
+
+      const supabaseUrl = import.meta.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+      const res = await fetch(`${supabaseUrl}/functions/v1/create-match-official`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ email, password }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Couldn't create the account");
+
+      setResult({ email, password });
+      setEmail("");
+      setPassword("");
+      toast.success("Match official account created and approved");
+      onCreated();
+    } catch (err: any) {
+      toast.error(err.message ?? "Couldn't create the account");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mb-4 rounded-2xl border border-border/60 bg-secondary/40 p-4">
+      <p className="mb-3 font-display text-xs font-black uppercase tracking-wide">Create a match official login</p>
+      <form onSubmit={submit} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+        <div className="grid gap-1.5">
+          <Label>Email</Label>
+          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Password</Label>
+          <Input value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+        </div>
+        <Button type="button" variant="outline" onClick={generatePassword}>
+          Generate
+        </Button>
+        <Button type="submit" disabled={busy || !email || password.length < 6}>
+          {busy ? "Creating…" : "Create account"}
+        </Button>
+      </form>
+      <p className="mt-2 text-xs text-muted-foreground">
+        This creates a ready-to-use, already-approved login — no self-registration or approval step needed. Share the
+        email and password with the official directly; they can sign in at <code>/officials</code> right away.
+      </p>
+      {result && (
+        <div className="mt-3 rounded-xl border border-mint/40 bg-mint/10 p-3 text-sm">
+          <p className="font-semibold">Share these credentials with the official:</p>
+          <p className="mt-1">
+            Email: <code>{result.email}</code>
+          </p>
+          <p>
+            Password: <code>{result.password}</code>
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This is shown once — it isn't stored anywhere retrievable, so copy it now.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 type AdminRow = { user_id: string; email: string | null; approved: boolean; created_at: string; role: "admin" | "match_official" };
 
 function AdminsPanel({ currentUserId }: { currentUserId: string }) {
@@ -789,6 +873,7 @@ function AdminsPanel({ currentUserId }: { currentUserId: string }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
+          <CreateOfficialForm onCreated={load} />
           <AccountsTable rows={officials} emptyText="No match official accounts yet." />
         </CardContent>
       </Card>
