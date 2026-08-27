@@ -228,3 +228,37 @@ supabase functions deploy create-match-official
 No manual secrets to set — `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and
 `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by Supabase into
 every edge function's environment.
+
+## Postponed matches, player position, Scoreboard rename, team-grouped squads, foul reasons (20 Aug)
+
+**Postponed matches**: `fixtures.postponed` / `postponed_note` (new columns
+— run `supabase-mpl-reference/postponed-position-foul-reason.sql`).
+Match officials get a clear "This match was postponed" toggle on the
+report form (clears/disables the score fields, captures a reason).
+Admins can do the same from the Fixtures tab. The public site shows a
+"Postponed" badge and the reason instead of a score — postponed matches
+were already excluded from standings (no score set), this just makes
+the reason visible instead of the match looking simply unplayed.
+
+**Player position replaces jersey number**: `squads.position` (new
+column, same migration file above). Jersey number is gone from the
+admin form, the public squad list, and the player profile — replaced
+with Goalkeeper / Defender / Midfielder / Forward.
+
+**Scorers → Scoreboard**: route renamed `/scorers` → `/scoreboard`
+(file, routeTree.gen.ts, nav, footer, homepage links, admin sidebar all
+updated). The underlying `scorers` database table name is unchanged —
+only user-facing labels and the URL changed.
+
+**Squads grouped by team**: admin's Squads tab is now a collapsible
+section per club (an actual team sheet) instead of one long flat table,
+plus an "Unattached" section for anything missing a club.
+
+**Foul reasons on cards**: `cards.foul_reason` (same migration file).
+When a match official logs a card, they pick what actually happened
+(reckless tackle, dissent, handball, etc., or free text for anything
+else) — shown alongside the card in both the official's own card list
+for that match and the admin Discipline tab.
+
+**One SQL file to run**: `supabase-mpl-reference/postponed-position-foul-reason.sql`
+covers all three schema changes in this round.

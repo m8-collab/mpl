@@ -93,7 +93,7 @@ function Index() {
 
           <aside className="grid gap-8 self-start">
             <div>
-              <SectionHead title="Golden boot" to="/scorers" cta="All scorers" />
+              <SectionHead title="Golden boot" to="/scoreboard" cta="See scoreboard" />
               <div className="surface-card divide-y divide-border">
                 {topScorers.map((s, i) => {
                   const club = s.club_id ? data?.clubMap[s.club_id] : undefined;
@@ -143,7 +143,7 @@ function Index() {
   );
 }
 
-function SectionHead({ title, to, cta }: { title: string; to: "/table" | "/fixtures" | "/scorers" | "/news"; cta: string }) {
+function SectionHead({ title, to, cta }: { title: string; to: "/table" | "/fixtures" | "/scoreboard" | "/news"; cta: string }) {
   return (
     <div className="mb-4 flex items-end justify-between gap-4">
       <h2 className="font-display text-xl lg:text-2xl">{title}</h2>

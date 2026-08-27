@@ -19,6 +19,22 @@ import type { Club, Fixture, CardEntry, CardType } from "@/lib/league";
 type AlbumRow = { id: number; name: string; fixture_id: string | null };
 type PhotoRow = { id: number; url: string; caption: string | null; album_id: number | null };
 
+// Common on-field offenses a match official can pick from when logging a
+// card, so the discipline record says WHAT happened, not just the color
+// of card shown. Left open-ended via a free-text fallback for anything
+// that doesn't fit these.
+const FOUL_REASONS = [
+  "Reckless tackle",
+  "Serious foul play",
+  "Handball",
+  "Dissent by word or action",
+  "Unsporting behaviour",
+  "Denying an obvious goal-scoring opportunity",
+  "Violent conduct",
+  "Time wasting",
+  "Persistent infringement",
+];
+
 /**
  * Everything a match official needs to file after a game, in one place:
  * result, lineups, cards, man of the match, and matchday photos — all
@@ -65,12 +81,23 @@ export function MatchOfficialDashboard({
     man_of_the_match: "",
     home_lineup: "",
     away_lineup: "",
+    postponed: false,
+    postponed_note: "",
   });
   const [savingReport, setSavingReport] = useState(false);
 
   useEffect(() => {
     if (!fixture) {
-      setForm({ home_score: "", away_score: "", match_official: "", man_of_the_match: "", home_lineup: "", away_lineup: "" });
+      setForm({
+        home_score: "",
+        away_score: "",
+        match_official: "",
+        man_of_the_match: "",
+        home_lineup: "",
+        away_lineup: "",
+        postponed: false,
+        postponed_note: "",
+      });
       return;
     }
     setForm({
@@ -80,6 +107,8 @@ export function MatchOfficialDashboard({
       man_of_the_match: fixture.man_of_the_match ?? "",
       home_lineup: fixture.home_lineup ?? "",
       away_lineup: fixture.away_lineup ?? "",
+      postponed: fixture.postponed ?? false,
+      postponed_note: fixture.postponed_note ?? "",
     });
   }, [fixture?.id]);
 
@@ -90,24 +119,26 @@ export function MatchOfficialDashboard({
     const { error } = await supabase
       .from("fixtures")
       .update({
-        home_score: form.home_score === "" ? null : Number(form.home_score),
-        away_score: form.away_score === "" ? null : Number(form.away_score),
+        home_score: form.postponed ? null : form.home_score === "" ? null : Number(form.home_score),
+        away_score: form.postponed ? null : form.away_score === "" ? null : Number(form.away_score),
         match_official: form.match_official || null,
         man_of_the_match: form.man_of_the_match || null,
         home_lineup: form.home_lineup || null,
         away_lineup: form.away_lineup || null,
+        postponed: form.postponed,
+        postponed_note: form.postponed ? form.postponed_note || null : null,
       })
       .eq("id", fixtureId);
     setSavingReport(false);
     if (error) return toast.error(error.message);
-    toast.success("Match report saved");
+    toast.success(form.postponed ? "Match marked as postponed" : "Match report saved");
     onChanged?.();
   }
 
   // ---- cards for this fixture ----
   const [cards, setCards] = useState<CardEntry[]>([]);
   const [loadingCards, setLoadingCards] = useState(false);
-  const [cardForm, setCardForm] = useState({ club_id: "", player_name: "", card_type: "yellow" as CardType, red_via_two_yellows: false });
+  const [cardForm, setCardForm] = useState({ club_id: "", player_name: "", card_type: "yellow" as CardType, red_via_two_yellows: false, foul_reason: "" });
   const [savingCard, setSavingCard] = useState(false);
 
   async function loadCards(id: string) {
@@ -125,7 +156,7 @@ export function MatchOfficialDashboard({
   useEffect(() => {
     if (fixtureId) loadCards(fixtureId);
     else setCards([]);
-    setCardForm({ club_id: "", player_name: "", card_type: "yellow", red_via_two_yellows: false });
+    setCardForm({ club_id: "", player_name: "", card_type: "yellow", red_via_two_yellows: false, foul_reason: "" });
   }, [fixtureId]);
 
   async function addCard(e: FormEvent) {
@@ -138,11 +169,12 @@ export function MatchOfficialDashboard({
       player_name: cardForm.player_name.trim(),
       card_type: cardForm.card_type,
       red_via_two_yellows: cardForm.card_type === "red" ? cardForm.red_via_two_yellows : false,
+      foul_reason: cardForm.foul_reason || null,
     });
     setSavingCard(false);
     if (error) return toast.error(error.message);
     toast.success("Card added");
-    setCardForm({ club_id: "", player_name: "", card_type: "yellow", red_via_two_yellows: false });
+    setCardForm({ club_id: "", player_name: "", card_type: "yellow", red_via_two_yellows: false, foul_reason: "" });
     await loadCards(fixtureId);
     onChanged?.();
   }
@@ -272,12 +304,30 @@ export function MatchOfficialDashboard({
             </CardHeader>
             <CardContent>
               <form onSubmit={saveReport} className="grid gap-4">
-                <div className="grid grid-cols-2 gap-3 sm:max-w-sm">
+                <label className="flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm">
+                  <Checkbox
+                    checked={form.postponed}
+                    onCheckedChange={(v) => setForm((f) => ({ ...f, postponed: v === true }))}
+                  />
+                  This match was postponed (no result to file)
+                </label>
+                {form.postponed && (
+                  <div className="grid gap-1.5">
+                    <Label>Reason / new date note</Label>
+                    <Input
+                      value={form.postponed_note}
+                      onChange={(e) => setForm((f) => ({ ...f, postponed_note: e.target.value }))}
+                      placeholder="e.g. Waterlogged pitch — new date to be confirmed"
+                    />
+                  </div>
+                )}
+                <div className={`grid grid-cols-2 gap-3 sm:max-w-sm ${form.postponed ? "opacity-40" : ""}`}>
                   <div className="grid gap-1.5">
                     <Label>{homeClub?.name ?? "Home"} score</Label>
                     <Input
                       type="number"
                       value={form.home_score}
+                      disabled={form.postponed}
                       onChange={(e) => setForm((f) => ({ ...f, home_score: e.target.value }))}
                     />
                   </div>
@@ -286,6 +336,7 @@ export function MatchOfficialDashboard({
                     <Input
                       type="number"
                       value={form.away_score}
+                      disabled={form.postponed}
                       onChange={(e) => setForm((f) => ({ ...f, away_score: e.target.value }))}
                     />
                   </div>
@@ -340,7 +391,8 @@ export function MatchOfficialDashboard({
               <CardTitle className="font-display text-base uppercase tracking-wide">Cards</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
-              <form onSubmit={addCard} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto_auto] sm:items-end">
+              <form onSubmit={addCard} className="grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto_auto] sm:items-end">
                 <div className="grid gap-1.5">
                   <Label>Club</Label>
                   <Select value={cardForm.club_id} onValueChange={(v) => setCardForm((c) => ({ ...c, club_id: v }))}>
@@ -391,6 +443,33 @@ export function MatchOfficialDashboard({
                 <Button type="submit" disabled={savingCard || !cardForm.club_id || !cardForm.player_name.trim()}>
                   Add card
                 </Button>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Foul (what happened)</Label>
+                  <Select
+                    value={FOUL_REASONS.includes(cardForm.foul_reason) ? cardForm.foul_reason : cardForm.foul_reason ? "Other" : ""}
+                    onValueChange={(v) => setCardForm((c) => ({ ...c, foul_reason: v === "Other" ? "" : v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select the foul…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FOUL_REASONS.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {r}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {(!FOUL_REASONS.includes(cardForm.foul_reason)) && (
+                    <Input
+                      value={cardForm.foul_reason}
+                      onChange={(e) => setCardForm((c) => ({ ...c, foul_reason: e.target.value }))}
+                      placeholder="Describe the foul"
+                      className="mt-1"
+                    />
+                  )}
+                </div>
               </form>
 
               {loadingCards ? (
@@ -405,6 +484,7 @@ export function MatchOfficialDashboard({
                         </span>{" "}
                         {c.player_name} · {c.club_id ? clubMap[c.club_id]?.name : "—"}
                         {c.red_via_two_yellows && <span className="text-muted-foreground"> (2nd yellow)</span>}
+                        {c.foul_reason && <span className="text-muted-foreground"> — {c.foul_reason}</span>}
                       </span>
                       <Button size="sm" variant="destructive" onClick={() => deleteCard(c.id)}>
                         Remove

@@ -17,7 +17,7 @@ import { Route as FixturesRouteImport } from './routes/fixtures'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as PredictorRouteImport } from './routes/predictor'
-import { Route as ScorersRouteImport } from './routes/scorers'
+import { Route as ScoreboardRouteImport } from './routes/scoreboard'
 import { Route as TableRouteImport } from './routes/table'
 import { Route as ClubsIndexRouteImport } from './routes/clubs.index'
 import { Route as ClubsClubIdRouteImport } from './routes/clubs.$clubId'
@@ -62,9 +62,9 @@ const PredictorRoute = PredictorRouteImport.update({
   path: '/predictor',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ScorersRoute = ScorersRouteImport.update({
-  id: '/scorers',
-  path: '/scorers',
+const ScoreboardRoute = ScoreboardRouteImport.update({
+  id: '/scoreboard',
+  path: '/scoreboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TableRoute = TableRouteImport.update({
@@ -92,7 +92,7 @@ export interface FileRoutesByFullPath {
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
   '/predictor': typeof PredictorRoute
-  '/scorers': typeof ScorersRoute
+  '/scoreboard': typeof ScoreboardRoute
   '/table': typeof TableRoute
   '/clubs/$clubId': typeof ClubsClubIdRoute
   '/clubs/': typeof ClubsIndexRoute
@@ -106,7 +106,7 @@ export interface FileRoutesByTo {
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
   '/predictor': typeof PredictorRoute
-  '/scorers': typeof ScorersRoute
+  '/scoreboard': typeof ScoreboardRoute
   '/table': typeof TableRoute
   '/clubs/$clubId': typeof ClubsClubIdRoute
   '/clubs': typeof ClubsIndexRoute
@@ -121,7 +121,7 @@ export interface FileRoutesById {
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
   '/predictor': typeof PredictorRoute
-  '/scorers': typeof ScorersRoute
+  '/scoreboard': typeof ScoreboardRoute
   '/table': typeof TableRoute
   '/clubs/$clubId': typeof ClubsClubIdRoute
   '/clubs/': typeof ClubsIndexRoute
@@ -137,7 +137,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/news'
     | '/predictor'
-    | '/scorers'
+    | '/scoreboard'
     | '/table'
     | '/clubs/$clubId'
     | '/clubs/'
@@ -151,7 +151,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/news'
     | '/predictor'
-    | '/scorers'
+    | '/scoreboard'
     | '/table'
     | '/clubs/$clubId'
     | '/clubs'
@@ -165,7 +165,7 @@ export interface FileRouteTypes {
     | '/gallery'
     | '/news'
     | '/predictor'
-    | '/scorers'
+    | '/scoreboard'
     | '/table'
     | '/clubs/$clubId'
     | '/clubs/'
@@ -180,7 +180,7 @@ export interface RootRouteChildren {
   GalleryRoute: typeof GalleryRoute
   NewsRoute: typeof NewsRoute
   PredictorRoute: typeof PredictorRoute
-  ScorersRoute: typeof ScorersRoute
+  ScoreboardRoute: typeof ScoreboardRoute
   TableRoute: typeof TableRoute
   ClubsClubIdRoute: typeof ClubsClubIdRoute
   ClubsIndexRoute: typeof ClubsIndexRoute
@@ -244,11 +244,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PredictorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/scorers': {
-      id: '/scorers'
-      path: '/scorers'
-      fullPath: '/scorers'
-      preLoaderRoute: typeof ScorersRouteImport
+    '/scoreboard': {
+      id: '/scoreboard'
+      path: '/scoreboard'
+      fullPath: '/scoreboard'
+      preLoaderRoute: typeof ScoreboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/table': {
@@ -284,7 +284,7 @@ const rootRouteChildren: RootRouteChildren = {
   GalleryRoute: GalleryRoute,
   NewsRoute: NewsRoute,
   PredictorRoute: PredictorRoute,
-  ScorersRoute: ScorersRoute,
+  ScoreboardRoute: ScoreboardRoute,
   TableRoute: TableRoute,
   ClubsClubIdRoute: ClubsClubIdRoute,
   ClubsIndexRoute: ClubsIndexRoute,

@@ -84,7 +84,7 @@ function ClubPage() {
                   <span>
                     <span className="block text-sm font-semibold">{p.player_name}</span>
                     <span className="eyebrow text-muted-foreground">
-                      {p.jersey_no ? `No. ${p.jersey_no}` : "Squad"}
+                      {p.position || "Squad"}
                     </span>
                   </span>
                 </button>
@@ -148,7 +148,7 @@ function ClubPage() {
                   <span>
                     <span className="block">{activePlayer.player_name}</span>
                     <span className="eyebrow block font-normal text-muted-foreground">
-                      {club.name} {activePlayer.jersey_no ? `· No. ${activePlayer.jersey_no}` : ""}
+                      {club.name} {activePlayer.position ? `· ${activePlayer.position}` : ""}
                     </span>
                   </span>
                 </DialogTitle>

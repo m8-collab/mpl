@@ -4,26 +4,26 @@ import { leagueQuery, initials } from "@/lib/league";
 import { ClubBadge } from "@/components/league/ClubBadge";
 import { PageHeader } from "@/components/league/PageHeader";
 
-export const Route = createFileRoute("/scorers")({
+export const Route = createFileRoute("/scoreboard")({
   head: () => ({
     meta: [
-      { title: "Top Scorers | Mtwapa Premier League" },
+      { title: "Scoreboard | Mtwapa Premier League" },
       { name: "description", content: "The Golden Boot race: leading goalscorers and their clubs in the Mtwapa Premier League." },
-      { property: "og:title", content: "Mtwapa Premier League Top Scorers" },
+      { property: "og:title", content: "Mtwapa Premier League Scoreboard" },
       { property: "og:description", content: "Who is leading the Golden Boot race this season." },
     ],
   }),
-  component: ScorersPage,
+  component: ScoreboardPage,
 });
 
-function ScorersPage() {
+function ScoreboardPage() {
   const { data } = useQuery(leagueQuery);
   const scorers = data?.scorers ?? [];
   const podium = scorers.slice(0, 3);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 lg:px-8">
-      <PageHeader eyebrow="Golden Boot" title="Top Scorers" />
+      <PageHeader eyebrow="Golden Boot" title="Scoreboard" />
 
       {podium.length > 0 && (
         <div className="mb-8 grid gap-3 sm:grid-cols-3">

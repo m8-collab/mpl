@@ -39,6 +39,8 @@ export type Fixture = {
   man_of_the_match: string | null;
   home_lineup: string | null;
   away_lineup: string | null;
+  postponed: boolean;
+  postponed_note: string | null;
 };
 
 export type CardType = "yellow" | "red";
@@ -50,6 +52,7 @@ export type CardEntry = {
   player_name: string;
   card_type: CardType;
   red_via_two_yellows: boolean;
+  foul_reason: string | null;
   created_at: string;
 };
 
@@ -126,7 +129,7 @@ export type SquadPlayer = {
   id: number;
   club_id: string | null;
   player_name: string;
-  jersey_no: number | null;
+  position: string | null;
   photo_url: string | null;
 };
 
@@ -190,7 +193,7 @@ export async function fetchLeague(): Promise<LeagueData> {
     supabase.from("table_rows").select("*"),
     supabase.from("fixtures").select("*").order("date"),
     supabase.from("scorers").select("*").order("goals", { ascending: false }),
-    supabase.from("squads").select("*").order("jersey_no"),
+    supabase.from("squads").select("*").order("player_name"),
     supabase.from("news").select("*").order("created_at", { ascending: false }),
     supabase.from("albums").select("*").order("sort_order"),
     supabase.from("gallery").select("*").order("sort_order"),

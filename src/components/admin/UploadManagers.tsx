@@ -16,12 +16,16 @@ import {
 
 type Club = { id: string; name: string };
 type Album = { id: number; name: string };
-type SquadPlayer = { id: number; club_id: string | null; player_name: string; jersey_no: number | null; photo_url: string | null };
+type SquadPlayer = { id: number; club_id: string | null; player_name: string; position: string | null; photo_url: string | null };
 type Photo = { id: number; url: string; caption: string | null; album_id: number | null; sort_order: number };
+
+const POSITIONS = ["Goalkeeper", "Defender", "Midfielder", "Forward"];
 
 /* ------------------------------------------------------------------ */
 /* Squads — player roster with optional headshot upload to the        */
-/* "players" storage bucket.                                          */
+/* "players" storage bucket. Players are added one club at a time and */
+/* the roster below is grouped by club, so it reads like an actual    */
+/* team sheet rather than one long mixed list.                        */
 /* ------------------------------------------------------------------ */
 export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?: () => void }) {
   const [players, setPlayers] = useState<SquadPlayer[]>([]);
@@ -29,13 +33,17 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
   const [editingId, setEditingId] = useState<number | null>(null);
   const [clubId, setClubId] = useState("");
   const [name, setName] = useState("");
-  const [jersey, setJersey] = useState("");
+  const [position, setPosition] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  // Which club's roster is expanded — defaults to whichever club is
+  // picked in the add-player form, so adding a player and seeing them
+  // land in their team's section happens in the same view.
+  const [openClubId, setOpenClubId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase.from("squads").select("*").order("club_id").order("jersey_no");
+    const { data, error } = await supabase.from("squads").select("*").order("player_name");
     if (error) toast.error(error.message);
     setPlayers((data as SquadPlayer[]) ?? []);
     setLoading(false);
@@ -48,7 +56,7 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
     setEditingId(null);
     setClubId("");
     setName("");
-    setJersey("");
+    setPosition("");
     setFile(null);
   }
 
@@ -56,8 +64,9 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
     setEditingId(p.id);
     setClubId(p.club_id ?? "");
     setName(p.player_name);
-    setJersey(p.jersey_no?.toString() ?? "");
+    setPosition(p.position ?? "");
     setFile(null);
+    setOpenClubId(p.club_id);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -67,7 +76,7 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
       const payload: Record<string, any> = {
         club_id: clubId || null,
         player_name: name,
-        jersey_no: jersey === "" ? null : Number(jersey),
+        position: position || null,
       };
       if (file) {
         const path = `${clubId || "misc"}/${Date.now()}-${file.name}`;
@@ -84,6 +93,7 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
       if (error) throw error;
 
       toast.success(editingId !== null ? "Player saved" : "Player added");
+      setOpenClubId(clubId);
       resetForm();
       await load();
       onChanged?.();
@@ -103,6 +113,11 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
     onChanged?.();
   }
 
+  const rosterByClub = clubs
+    .map((c) => ({ club: c, roster: players.filter((p) => p.club_id === c.id) }))
+    .filter((g) => g.roster.length > 0 || g.club.id === clubId);
+  const unattached = players.filter((p) => !p.club_id || !clubs.some((c) => c.id === p.club_id));
+
   return (
     <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
       <Card>
@@ -115,7 +130,14 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
           <form onSubmit={handleSubmit} className="grid gap-3">
             <div className="grid gap-1.5">
               <Label>Club</Label>
-              <Select value={clubId} onValueChange={setClubId} disabled={editingId !== null}>
+              <Select
+                value={clubId}
+                onValueChange={(v) => {
+                  setClubId(v);
+                  setOpenClubId(v);
+                }}
+                disabled={editingId !== null}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select club…" />
                 </SelectTrigger>
@@ -133,8 +155,19 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
               <Input value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="grid gap-1.5">
-              <Label>Jersey number</Label>
-              <Input type="number" value={jersey} onChange={(e) => setJersey(e.target.value)} />
+              <Label>Position</Label>
+              <Select value={position} onValueChange={setPosition}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select position…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {POSITIONS.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5">
               <Label>Headshot (optional)</Label>
@@ -156,41 +189,105 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-display text-base uppercase tracking-wide">Squads ({players.length})</CardTitle>
+          <CardTitle className="font-display text-base uppercase tracking-wide">Squads by team ({players.length})</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="grid gap-3">
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : rosterByClub.length === 0 && unattached.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No players added yet.</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Club</TableHead>
-                  <TableHead>Player</TableHead>
-                  <TableHead>No.</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {players.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell>{clubs.find((c) => c.id === p.club_id)?.name ?? p.club_id}</TableCell>
-                    <TableCell>{p.player_name}</TableCell>
-                    <TableCell>{p.jersey_no ?? "—"}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="outline" onClick={() => startEdit(p)}>
-                          Edit
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(p)}>
-                          Delete
-                        </Button>
+            <>
+              {rosterByClub.map(({ club, roster }) => {
+                const open = openClubId === club.id;
+                return (
+                  <div key={club.id} className="rounded-2xl border border-border/60">
+                    <button
+                      type="button"
+                      onClick={() => setOpenClubId(open ? null : club.id)}
+                      className="flex w-full items-center justify-between px-4 py-3 text-left"
+                    >
+                      <span className="font-display text-sm font-bold uppercase tracking-wide">{club.name}</span>
+                      <span className="text-xs text-muted-foreground">{roster.length} player{roster.length === 1 ? "" : "s"}</span>
+                    </button>
+                    {open && (
+                      <div className="overflow-x-auto border-t border-border/60">
+                        {roster.length === 0 ? (
+                          <p className="px-4 py-3 text-sm text-muted-foreground">No players added for this club yet.</p>
+                        ) : (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Player</TableHead>
+                                <TableHead>Position</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {roster.map((p) => (
+                                <TableRow key={p.id}>
+                                  <TableCell>{p.player_name}</TableCell>
+                                  <TableCell>{p.position ?? "—"}</TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-2">
+                                      <Button size="sm" variant="outline" onClick={() => startEdit(p)}>
+                                        Edit
+                                      </Button>
+                                      <Button size="sm" variant="destructive" onClick={() => handleDelete(p)}>
+                                        Delete
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        )}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    )}
+                  </div>
+                );
+              })}
+
+              {unattached.length > 0 && (
+                <div className="rounded-2xl border border-destructive/40">
+                  <div className="px-4 py-3">
+                    <span className="font-display text-sm font-bold uppercase tracking-wide text-destructive">
+                      Unattached ({unattached.length})
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto border-t border-destructive/40">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Player</TableHead>
+                          <TableHead>Position</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {unattached.map((p) => (
+                          <TableRow key={p.id}>
+                            <TableCell>{p.player_name}</TableCell>
+                            <TableCell>{p.position ?? "—"}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="outline" onClick={() => startEdit(p)}>
+                                  Edit
+                                </Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleDelete(p)}>
+                                  Delete
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

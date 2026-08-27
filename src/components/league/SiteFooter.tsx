@@ -78,8 +78,8 @@ export function SiteFooter() {
           <Link to="/clubs" className="text-primary-foreground/70 hover:text-mint">
             Clubs
           </Link>
-          <Link to="/scorers" className="text-primary-foreground/70 hover:text-mint">
-            Top Scorers
+          <Link to="/scoreboard" className="text-primary-foreground/70 hover:text-mint">
+            Scoreboard
           </Link>
           <Link to="/gallery" className="text-primary-foreground/70 hover:text-mint">
             Gallery

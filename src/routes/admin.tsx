@@ -390,6 +390,8 @@ function Dashboard({ session }: { session: Session }) {
       { name: "home_id", label: "Home club", type: "select", options: clubOptions, required: true },
       { name: "away_id", label: "Away club", type: "select", options: clubOptions, required: true },
       { name: "venue", label: "Venue", type: "text" },
+      { name: "postponed", label: "Postponed?", type: "boolean" },
+      { name: "postponed_note", label: "Postponement reason / new date note", type: "text", showInList: false },
       { name: "home_score", label: "Home score", type: "number" },
       { name: "away_score", label: "Away score", type: "number" },
       { name: "match_official", label: "Match official (referee)", type: "text", showInList: false },
@@ -408,6 +410,7 @@ function Dashboard({ session }: { session: Session }) {
       },
     ],
     numericFields: ["home_score", "away_score"],
+    booleanFields: ["postponed"],
     beforeInsert: (payload) => ({ ...payload, id: payload.id || `m${payload.match_no}` }),
   };
 
@@ -452,6 +455,7 @@ function Dashboard({ session }: { session: Session }) {
         ],
       },
       { name: "red_via_two_yellows", label: "Red via 2nd yellow?", type: "boolean" },
+      { name: "foul_reason", label: "Foul", type: "text", showInList: false },
     ],
     booleanFields: ["red_via_two_yellows"],
   };
@@ -499,7 +503,7 @@ function Dashboard({ session }: { session: Session }) {
     { id: "clubs", label: "Clubs", icon: <Shield size={18} /> },
     { id: "table", label: "Table", icon: <ListOrdered size={18} /> },
     { id: "fixtures", label: "Fixtures", icon: <CalendarDays size={18} /> },
-    { id: "scorers", label: "Scorers", icon: <Target size={18} /> },
+    { id: "scoreboard", label: "Scoreboard", icon: <Target size={18} /> },
     { id: "squads", label: "Squads", icon: <Users size={18} /> },
     { id: "cards", label: "Discipline", icon: <AlertTriangle size={18} /> },
     { id: "news", label: "News", icon: <Newspaper size={18} /> },
@@ -616,9 +620,15 @@ function Dashboard({ session }: { session: Session }) {
         <>
           <FixturePdfImport clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
           <EntityManager config={fixturesConfig} title="Fixture" onChanged={refreshPublicSite} />
+          <p className="mt-3 text-xs text-muted-foreground">
+            Tick "Postponed" instead of deleting a fixture or leaving its score blank — a postponed match shows a
+            clear "Postponed" badge on the public Fixtures page instead of just looking unplayed, and stays out of
+            the standings the same way any unplayed match does. Edit the date once a new one is confirmed and untick
+            it.
+          </p>
         </>
       )}
-      {section === "scorers" && (
+      {section === "scoreboard" && (
         <>
           <ScorersPdfImport clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
           <EntityManager config={scorersConfig} title="Scorer" onChanged={refreshPublicSite} />
