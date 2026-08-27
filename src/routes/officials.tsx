@@ -312,7 +312,8 @@ function OfficialDashboardScreen({ session }: { session: Session }) {
   ];
 
   const pending = (data?.fixtures ?? []).filter((f) => f.home_score === null || f.away_score === null);
-  const nextFixture = pending.slice().sort((a, b) => a.date.localeCompare(b.date))[0];
+  const myAssignments = pending.filter((f) => f.assigned_official_id === session.user.id);
+  const nextFixture = (myAssignments.length ? myAssignments : pending).slice().sort((a, b) => a.date.localeCompare(b.date))[0];
 
   return (
     <DashboardShell
@@ -330,6 +331,12 @@ function OfficialDashboardScreen({ session }: { session: Session }) {
         <div className="grid gap-4">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <StatCard
+              label="Assigned to you"
+              value={String(myAssignments.length)}
+              icon={<ClipboardList size={18} className="text-[#04231a]" />}
+              tint="var(--mint)"
+            />
+            <StatCard
               label="Fixtures needing a report"
               value={String(pending.length)}
               icon={<ClipboardList size={18} className="text-[#04231a]" />}
@@ -344,7 +351,7 @@ function OfficialDashboardScreen({ session }: { session: Session }) {
           </div>
 
           <DashCard
-            title="Next fixture to report"
+            title={myAssignments.length ? "Your next assigned fixture" : "Next fixture to report"}
             action={
               <button onClick={() => setSection("file-report")} className="text-xs font-semibold text-[#0a7a58] hover:underline">
                 File report

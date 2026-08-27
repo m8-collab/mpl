@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { leagueQuery, isPlayed } from "@/lib/league";
+import { leagueQuery, liveRefetchInterval, isPlayed } from "@/lib/league";
 import { StandingsTable } from "@/components/league/StandingsTable";
 import { MatchCard } from "@/components/league/MatchCard";
 import { ClubBadge } from "@/components/league/ClubBadge";
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { data } = useQuery(leagueQuery);
+  const { data } = useQuery({ ...leagueQuery, refetchInterval: liveRefetchInterval });
   const upcoming = (data?.fixtures ?? []).filter((f) => !isPlayed(f)).slice(0, 3);
   const results = (data?.fixtures ?? []).filter(isPlayed).slice(-3).reverse();
   const topFive = data?.standings.slice(0, 5) ?? [];
@@ -66,6 +66,25 @@ function Index() {
           </div>
         </div>
       </section>
+
+      {!!data?.sponsors.length && (
+        <div className="border-b border-border bg-secondary/40">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-8 gap-y-3 px-4 py-4 lg:px-8">
+            <p className="eyebrow shrink-0 text-muted-foreground">Proudly supported by</p>
+            {data.sponsors.map((s) =>
+              s.logo_url ? (
+                <a key={s.id} href={s.link ?? undefined} target="_blank" rel="noreferrer noopener sponsored" title={s.name}>
+                  <img src={s.logo_url} alt={s.name} className="h-7 w-auto object-contain opacity-80 transition-opacity hover:opacity-100" />
+                </a>
+              ) : (
+                <span key={s.id} className="text-sm font-semibold text-muted-foreground">
+                  {s.name}
+                </span>
+              ),
+            )}
+          </div>
+        </div>
+      )}
 
       <section className="mx-auto max-w-7xl px-4 py-14 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">

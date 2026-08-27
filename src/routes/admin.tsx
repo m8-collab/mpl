@@ -340,8 +340,19 @@ function Dashboard({ session }: { session: Session }) {
   const queryClient = useQueryClient();
   const { data } = useQuery(leagueQuery);
   const [section, setSection] = useState("overview");
+  const [officials, setOfficials] = useState<{ user_id: string; email: string | null }[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("admins")
+      .select("user_id, email")
+      .eq("role", "match_official")
+      .eq("approved", true)
+      .then(({ data }) => setOfficials(data ?? []));
+  }, []);
 
   const clubOptions = (data?.clubs ?? []).map((c) => ({ value: c.id, label: c.name }));
+  const officialOptions = officials.map((o) => ({ value: o.user_id, label: o.email ?? o.user_id }));
 
   function refreshPublicSite() {
     queryClient.invalidateQueries({ queryKey: ["league"] });
@@ -392,6 +403,9 @@ function Dashboard({ session }: { session: Session }) {
       { name: "venue", label: "Venue", type: "text" },
       { name: "postponed", label: "Postponed?", type: "boolean" },
       { name: "postponed_note", label: "Postponement reason / new date note", type: "text", showInList: false },
+      { name: "live", label: "Live now?", type: "boolean" },
+      { name: "assigned_official_id", label: "Assigned official", type: "select", options: officialOptions, showInList: false },
+      { name: "season", label: "Season", type: "text", showInList: false, placeholder: data?.seasonLabel ?? "Season 2026" },
       { name: "home_score", label: "Home score", type: "number" },
       { name: "away_score", label: "Away score", type: "number" },
       { name: "match_official", label: "Match official (referee)", type: "text", showInList: false },
@@ -410,7 +424,7 @@ function Dashboard({ session }: { session: Session }) {
       },
     ],
     numericFields: ["home_score", "away_score"],
-    booleanFields: ["postponed"],
+    booleanFields: ["postponed", "live"],
     beforeInsert: (payload) => ({ ...payload, id: payload.id || `m${payload.match_no}` }),
   };
 
@@ -422,6 +436,7 @@ function Dashboard({ session }: { session: Session }) {
       { name: "player_name", label: "Player", type: "text", required: true },
       { name: "club_id", label: "Club", type: "select", options: clubOptions, required: true },
       { name: "goals", label: "Goals", type: "number" },
+      { name: "season", label: "Season", type: "text", showInList: false, placeholder: data?.seasonLabel ?? "Season 2026" },
     ],
     numericFields: ["goals"],
   };
@@ -618,7 +633,7 @@ function Dashboard({ session }: { session: Session }) {
       )}
       {section === "fixtures" && (
         <>
-          <FixturePdfImport clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
+          <FixturePdfImport clubs={data?.clubs ?? []} seasonLabel={data?.seasonLabel} onChanged={refreshPublicSite} />
           <EntityManager config={fixturesConfig} title="Fixture" onChanged={refreshPublicSite} />
           <p className="mt-3 text-xs text-muted-foreground">
             Tick "Postponed" instead of deleting a fixture or leaving its score blank — a postponed match shows a
@@ -630,7 +645,7 @@ function Dashboard({ session }: { session: Session }) {
       )}
       {section === "scoreboard" && (
         <>
-          <ScorersPdfImport clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
+          <ScorersPdfImport clubs={data?.clubs ?? []} seasonLabel={data?.seasonLabel} onChanged={refreshPublicSite} />
           <EntityManager config={scorersConfig} title="Scorer" onChanged={refreshPublicSite} />
         </>
       )}

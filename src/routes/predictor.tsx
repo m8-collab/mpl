@@ -1,16 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { leagueQuery, fmtDate, type Fixture } from "@/lib/league";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState, type FormEvent } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { leagueQuery, computePredictorLeaderboard, fmtDate, type Fixture } from "@/lib/league";
 import { PageHeader } from "@/components/league/PageHeader";
 import { ClubBadge } from "@/components/league/ClubBadge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/predictor")({
   head: () => ({
     meta: [
       { title: "Fan Predictor | Mtwapa Premier League" },
-      { name: "description", content: "Pick the winners of the next round of Mtwapa Premier League fixtures and save your predictions." },
+      { name: "description", content: "Pick the winners of the next round of Mtwapa Premier League fixtures and climb the predictor leaderboard." },
       { property: "og:title", content: "Mtwapa Premier League Fan Predictor" },
       { property: "og:description", content: "Call the results before kickoff." },
     ],
@@ -19,40 +23,88 @@ export const Route = createFileRoute("/predictor")({
 });
 
 type Pick = "home" | "draw" | "away";
-const KEY = "mpl-predictions";
+const IDENTITY_KEY = "mpl-predictor-identity";
 
 function PredictorPage() {
   const { data } = useQuery(leagueQuery);
-  const [picks, setPicks] = useState<Record<string, Pick>>({});
-  const [hydrated, setHydrated] = useState(false);
+  const queryClient = useQueryClient();
+  const [identity, setIdentity] = useState<{ name: string; phone: string } | null>(null);
+  const [submitting, setSubmitting] = useState<string | null>(null);
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setPicks(JSON.parse(raw) as Record<string, Pick>);
+      const raw = localStorage.getItem(IDENTITY_KEY);
+      if (raw) setIdentity(JSON.parse(raw));
     } catch {
       /* ignore */
     }
-    setHydrated(true);
   }, []);
 
-  useEffect(() => {
-    if (hydrated) localStorage.setItem(KEY, JSON.stringify(picks));
-  }, [picks, hydrated]);
+  function saveIdentity(e: FormEvent) {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const name = (form.elements.namedItem("name") as HTMLInputElement).value.trim();
+    const phone = (form.elements.namedItem("phone") as HTMLInputElement).value.trim();
+    if (!name || !phone) return;
+    const id = { name, phone };
+    localStorage.setItem(IDENTITY_KEY, JSON.stringify(id));
+    setIdentity(id);
+  }
 
-  const upcoming = (data?.fixtures ?? []).filter((f) => f.home_score === null && f.away_score === null).slice(0, 12);
-  const made = upcoming.filter((f) => picks[f.id]).length;
+  async function makePick(fixtureId: string, pick: Pick) {
+    if (!identity) return;
+    setSubmitting(fixtureId);
+    const { error } = await supabase.from("predictions").insert({
+      fixture_id: fixtureId,
+      name: identity.name,
+      phone: identity.phone,
+      pick,
+    });
+    setSubmitting(null);
+    if (error) {
+      if (error.code === "23505") {
+        toast.error("You've already predicted this fixture — one pick per match.");
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
+    toast.success("Pick locked in");
+    queryClient.invalidateQueries({ queryKey: ["league"] });
+  }
+
+  const upcoming = (data?.fixtures ?? []).filter((f) => f.home_score === null && f.away_score === null && !f.postponed).slice(0, 12);
+  const myPicks = new Map(
+    (data?.predictions ?? []).filter((p) => p.phone === identity?.phone).map((p) => [p.fixture_id, p.pick]),
+  );
+  const leaderboard = computePredictorLeaderboard(data?.predictions ?? [], data?.fixtures ?? []).slice(0, 15);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 lg:px-8">
       <PageHeader
         eyebrow="Fan predictor"
         title="Call It Before Kickoff"
-        lead="Pick a winner for each upcoming fixture. Your picks are saved on this device."
+        lead="Pick a winner for each upcoming fixture. Once you're set up, picks are locked in — no changing your mind after kickoff."
       />
-      <p className="eyebrow mb-4 text-accent">
-        {made} of {upcoming.length} predicted
-      </p>
+
+      {!identity ? (
+        <form onSubmit={saveIdentity} className="surface-card mb-8 grid max-w-sm gap-3 p-4">
+          <p className="font-display text-xs font-black uppercase tracking-wide">Enter your name to start predicting</p>
+          <Input name="name" placeholder="Your name" required />
+          <Input name="phone" placeholder="Phone number" required />
+          <Button type="submit">Start predicting</Button>
+          <p className="text-xs text-muted-foreground">
+            Used to identify your picks on the leaderboard — no account needed, no spam.
+          </p>
+        </form>
+      ) : (
+        <p className="eyebrow mb-4 text-accent">
+          Predicting as {identity.name} ·{" "}
+          <button className="underline" onClick={() => { localStorage.removeItem(IDENTITY_KEY); setIdentity(null); }}>
+            not you?
+          </button>
+        </p>
+      )}
 
       <div className="grid gap-3">
         {upcoming.map((f) => (
@@ -63,20 +115,33 @@ function PredictorPage() {
             awayName={f.away_id ? (data?.clubMap[f.away_id]?.name ?? "TBC") : "TBC"}
             homeCrest={f.home_id ? data?.clubMap[f.home_id] : undefined}
             awayCrest={f.away_id ? data?.clubMap[f.away_id] : undefined}
-            pick={picks[f.id]}
-            onPick={(p) => setPicks((prev) => ({ ...prev, [f.id]: p }))}
+            pick={myPicks.get(f.id) as Pick | undefined}
+            disabled={!identity || submitting === f.id}
+            onPick={(p) => makePick(f.id, p)}
           />
         ))}
         {!upcoming.length && <p className="text-sm text-muted-foreground">No upcoming fixtures to predict.</p>}
       </div>
 
-      {made > 0 && (
-        <button
-          onClick={() => setPicks({})}
-          className="mt-6 rounded-sm border border-border px-4 py-2 font-display text-xs font-bold uppercase text-muted-foreground hover:text-foreground"
-        >
-          Reset picks
-        </button>
+      <h2 className="mb-4 mt-12 font-display text-xl">Leaderboard</h2>
+      {leaderboard.length ? (
+        <div className="surface-card divide-y divide-border">
+          {leaderboard.map((row, i) => (
+            <div key={row.phone} className="flex items-center justify-between px-4 py-3 text-sm">
+              <span className="flex items-center gap-3">
+                <span className="w-5 font-display text-xs font-bold text-muted-foreground">{i + 1}</span>
+                <span className="font-semibold">{row.name}</span>
+              </span>
+              <span className="text-muted-foreground">
+                <span className="font-display font-bold text-foreground">{row.correct}</span> / {row.total} correct
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          The leaderboard fills in once predicted fixtures are played — make some picks above to get on it.
+        </p>
       )}
     </div>
   );
@@ -89,6 +154,7 @@ function PredictRow({
   homeCrest,
   awayCrest,
   pick,
+  disabled,
   onPick,
 }: {
   fixture: Fixture;
@@ -97,8 +163,10 @@ function PredictRow({
   homeCrest?: Parameters<typeof ClubBadge>[0]["club"];
   awayCrest?: Parameters<typeof ClubBadge>[0]["club"];
   pick?: Pick | undefined;
+  disabled?: boolean;
   onPick: (p: Pick) => void;
 }) {
+  const locked = !!pick;
   const options: { key: Pick; label: string }[] = [
     { key: "home", label: homeName },
     { key: "draw", label: "Draw" },
@@ -121,18 +189,20 @@ function PredictRow({
         {options.map((o) => (
           <button
             key={o.key}
+            disabled={disabled || locked}
             onClick={() => onPick(o.key)}
             className={cn(
-              "truncate rounded-sm border px-2 py-2 font-display text-xs font-bold uppercase",
+              "truncate rounded-sm border px-2 py-2 font-display text-xs font-bold uppercase disabled:cursor-not-allowed",
               pick === o.key
                 ? "border-accent bg-accent text-accent-foreground"
-                : "border-border text-muted-foreground hover:border-accent hover:text-accent",
+                : "border-border text-muted-foreground enabled:hover:border-accent enabled:hover:text-accent",
             )}
           >
             {o.label}
           </button>
         ))}
       </div>
+      {locked && <p className="mt-2 text-xs text-muted-foreground">Pick locked in — good luck.</p>}
     </div>
   );
 }

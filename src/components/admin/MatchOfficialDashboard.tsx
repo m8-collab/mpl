@@ -112,6 +112,15 @@ export function MatchOfficialDashboard({
     });
   }, [fixture?.id]);
 
+  async function toggleLive() {
+    if (!fixture) return;
+    const nextLive = !fixture.live;
+    const { error } = await supabase.from("fixtures").update({ live: nextLive }).eq("id", fixture.id);
+    if (error) return toast.error(error.message);
+    toast.success(nextLive ? "Match is now LIVE on the site" : "Match ended — LIVE badge removed");
+    onChanged?.();
+  }
+
   async function saveReport(e: FormEvent) {
     e.preventDefault();
     if (!fixtureId) return;
@@ -127,6 +136,7 @@ export function MatchOfficialDashboard({
         away_lineup: form.away_lineup || null,
         postponed: form.postponed,
         postponed_note: form.postponed ? form.postponed_note || null : null,
+        ...(form.postponed ? { live: false } : {}),
       })
       .eq("id", fixtureId);
     setSavingReport(false);
@@ -297,13 +307,29 @@ export function MatchOfficialDashboard({
       {fixture && (
         <>
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
               <CardTitle className="font-display text-base uppercase tracking-wide">
                 Match report — {homeClub?.name ?? "TBC"} v {awayClub?.name ?? "TBC"}
               </CardTitle>
+              <Button
+                type="button"
+                variant={fixture.live ? "destructive" : "outline"}
+                size="sm"
+                onClick={toggleLive}
+                disabled={fixture.postponed}
+              >
+                {fixture.live ? "End live match (full time)" : "Go live at kickoff"}
+              </Button>
             </CardHeader>
             <CardContent>
               <form onSubmit={saveReport} className="grid gap-4">
+                {fixture.live && (
+                  <p className="rounded-xl border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
+                    This match is showing as LIVE on the public site right now. Update the scores below as goals go
+                    in — the site refreshes automatically while a match is live. Tap "End live match" above once
+                    it's full time.
+                  </p>
+                )}
                 <label className="flex items-center gap-2 rounded-xl border border-destructive/40 bg-destructive/5 px-3 py-2.5 text-sm">
                   <Checkbox
                     checked={form.postponed}
@@ -377,9 +403,33 @@ export function MatchOfficialDashboard({
                     />
                   </div>
                 </div>
-                <div>
+                <div className="flex flex-wrap items-center gap-2">
                   <Button type="submit" disabled={savingReport}>
                     {savingReport ? "Saving…" : "Save match report"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={fixture.postponed || fixture.home_score === null || fixture.away_score === null}
+                    onClick={() => {
+                      const lines = [
+                        `⚽ FULL TIME`,
+                        `${homeClub?.name ?? "TBC"} ${fixture.home_score} - ${fixture.away_score} ${awayClub?.name ?? "TBC"}`,
+                        fixture.venue ? `📍 ${fixture.venue}` : null,
+                        `📅 ${fixture.date}`,
+                        fixture.man_of_the_match ? `⭐ Man of the Match: ${fixture.man_of_the_match}` : null,
+                        cards.length
+                          ? `🟨🟥 Cards: ${cards
+                              .map((c) => `${c.player_name} (${c.card_type === "red" ? "R" : "Y"})`)
+                              .join(", ")}`
+                          : null,
+                        fixture.match_official ? `👤 Match official: ${fixture.match_official}` : null,
+                      ].filter(Boolean);
+                      const text = lines.join("\n");
+                      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+                    }}
+                  >
+                    Share result on WhatsApp
                   </Button>
                 </div>
               </form>

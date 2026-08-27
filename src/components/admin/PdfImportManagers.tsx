@@ -19,10 +19,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 /* Fixtures                                                            */
 /* ------------------------------------------------------------------ */
 
-export function FixturePdfImport({ clubs, onChanged }: { clubs: Club[]; onChanged?: () => void }) {
+export function FixturePdfImport({ clubs, seasonLabel, onChanged }: { clubs: Club[]; seasonLabel?: string; onChanged?: () => void }) {
   const [rows, setRows] = useState<ParsedFixture[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [season, setSeason] = useState(seasonLabel ?? "");
 
   const clubOptions = clubs.map((c) => ({ value: c.id, label: c.name }));
 
@@ -85,6 +86,7 @@ export function FixturePdfImport({ clubs, onChanged }: { clubs: Club[]; onChange
           home_id: r.homeClubId,
           away_id: r.awayClubId,
           venue: r.venue,
+          season: season || null,
         };
       });
 
@@ -111,6 +113,10 @@ export function FixturePdfImport({ clubs, onChanged }: { clubs: Club[]; onChange
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
+        <div className="grid gap-1.5 sm:max-w-xs">
+          <label className="text-xs font-semibold text-muted-foreground">Season (tags every fixture in this batch)</label>
+          <Input value={season} onChange={(e) => setSeason(e.target.value)} placeholder="e.g. Season 2026" />
+        </div>
         <Input
           type="file"
           accept="application/pdf"
@@ -215,10 +221,11 @@ export function FixturePdfImport({ clubs, onChanged }: { clubs: Club[]; onChange
 /* Scorers                                                             */
 /* ------------------------------------------------------------------ */
 
-export function ScorersPdfImport({ clubs, onChanged }: { clubs: Club[]; onChanged?: () => void }) {
+export function ScorersPdfImport({ clubs, seasonLabel, onChanged }: { clubs: Club[]; seasonLabel?: string; onChanged?: () => void }) {
   const [rows, setRows] = useState<ParsedScorer[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [season, setSeason] = useState(seasonLabel ?? "");
 
   const clubOptions = clubs.map((c) => ({ value: c.id, label: c.name }));
 
@@ -268,6 +275,7 @@ export function ScorersPdfImport({ clubs, onChanged }: { clubs: Club[]; onChange
         player_name: r.playerName,
         club_id: r.clubId,
         goals: r.goals,
+        season: season || null,
       }));
       const { error } = await supabase.from("scorers").insert(payload);
       if (error) throw error;
@@ -293,6 +301,10 @@ export function ScorersPdfImport({ clubs, onChanged }: { clubs: Club[]; onChange
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
+        <div className="grid gap-1.5 sm:max-w-xs">
+          <label className="text-xs font-semibold text-muted-foreground">Season (tags every scorer in this batch)</label>
+          <Input value={season} onChange={(e) => setSeason(e.target.value)} placeholder="e.g. Season 2026" />
+        </div>
         <Input
           type="file"
           accept="application/pdf"

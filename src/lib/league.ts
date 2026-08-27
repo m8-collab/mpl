@@ -41,6 +41,9 @@ export type Fixture = {
   away_lineup: string | null;
   postponed: boolean;
   postponed_note: string | null;
+  season: string | null;
+  live: boolean;
+  assigned_official_id: string | null;
 };
 
 export type CardType = "yellow" | "red";
@@ -86,6 +89,31 @@ const YELLOW_THRESHOLD = 5;
 const YELLOW_BAN_MATCHES = 1;
 const RED_BAN_MATCHES = 3;
 
+export function actualResult(f: Fixture): "home" | "draw" | "away" | null {
+  if (f.postponed || f.home_score === null || f.away_score === null) return null;
+  if (f.home_score > f.away_score) return "home";
+  if (f.home_score < f.away_score) return "away";
+  return "draw";
+}
+
+export type PredictorLeaderboardRow = { name: string; phone: string; correct: number; total: number };
+
+export function computePredictorLeaderboard(predictions: Prediction[], fixtures: Fixture[]): PredictorLeaderboardRow[] {
+  const fixtureMap = new Map(fixtures.map((f) => [f.id, f]));
+  const byPhone = new Map<string, PredictorLeaderboardRow>();
+  predictions.forEach((p) => {
+    const fixture = p.fixture_id ? fixtureMap.get(p.fixture_id) : undefined;
+    if (!fixture) return;
+    const result = actualResult(fixture);
+    if (result === null) return; // fixture not played (or postponed) yet — doesn't count either way
+    const row = byPhone.get(p.phone) ?? { name: p.name, phone: p.phone, correct: 0, total: 0 };
+    row.total += 1;
+    if (result === p.pick) row.correct += 1;
+    byPhone.set(p.phone, row);
+  });
+  return Array.from(byPhone.values()).sort((a, b) => b.correct - a.correct || b.total - a.total);
+}
+
 export function computeDiscipline(cards: CardEntry[]): PlayerDiscipline[] {
   const byPlayer = new Map<string, PlayerDiscipline>();
   for (const c of cards) {
@@ -123,6 +151,7 @@ export type Scorer = {
   player_name: string;
   club_id: string | null;
   goals: number;
+  season: string | null;
 };
 
 export type SquadPlayer = {
@@ -156,6 +185,15 @@ export type Photo = {
   sort_order: number;
 };
 
+export type Prediction = {
+  id: number;
+  fixture_id: string | null;
+  name: string;
+  phone: string;
+  pick: "home" | "draw" | "away";
+  created_at: string;
+};
+
 export type LeagueData = {
   seasonLabel: string;
   asOfLabel: string;
@@ -173,6 +211,8 @@ export type LeagueData = {
   cards: CardEntry[];
   discipline: PlayerDiscipline[];
   sponsors: Sponsor[];
+  predictions: Prediction[];
+  seasons: string[];
 };
 
 export async function fetchLeague(): Promise<LeagueData> {
@@ -188,6 +228,7 @@ export async function fetchLeague(): Promise<LeagueData> {
     settingsRes,
     cardsRes,
     sponsorsRes,
+    predictionsRes,
   ] = await Promise.all([
     supabase.from("clubs").select("*").order("name"),
     supabase.from("table_rows").select("*"),
@@ -200,6 +241,7 @@ export async function fetchLeague(): Promise<LeagueData> {
     supabase.from("settings").select("*").eq("id", 1).maybeSingle(),
     supabase.from("cards").select("*").order("created_at", { ascending: false }),
     supabase.from("sponsors").select("*").order("sort_order"),
+    supabase.from("predictions").select("*").order("created_at", { ascending: false }),
   ]);
 
   const clubs = (clubsRes.data ?? []) as Club[];
@@ -225,6 +267,11 @@ export async function fetchLeague(): Promise<LeagueData> {
   });
 
   const cards = (cardsRes.data ?? []) as CardEntry[];
+  const fixtures = (fixturesRes.data ?? []) as Fixture[];
+  const scorers = (scorersRes.data ?? []) as Scorer[];
+  const seasons = Array.from(
+    new Set([...fixtures.map((f) => f.season), ...scorers.map((s) => s.season)].filter((s): s is string => !!s)),
+  ).sort();
 
   return {
     seasonLabel: settingsRes.data?.season_label ?? "Season 2026",
@@ -239,8 +286,8 @@ export async function fetchLeague(): Promise<LeagueData> {
     clubs,
     clubMap,
     standings,
-    fixtures: (fixturesRes.data ?? []) as Fixture[],
-    scorers: (scorersRes.data ?? []) as Scorer[],
+    fixtures,
+    scorers,
     squads,
     news: (newsRes.data ?? []) as NewsItem[],
     albums: (albumsRes.data ?? []) as Album[],
@@ -248,6 +295,8 @@ export async function fetchLeague(): Promise<LeagueData> {
     cards,
     discipline: computeDiscipline(cards),
     sponsors: (sponsorsRes.data ?? []) as Sponsor[],
+    predictions: (predictionsRes.data ?? []) as Prediction[],
+    seasons,
   };
 }
 
@@ -256,6 +305,11 @@ export const leagueQuery = {
   queryFn: fetchLeague,
   staleTime: 60_000,
 };
+
+/** Poll faster only while at least one fixture is genuinely live — avoids
+ *  hammering the database on pages/visitors when nothing is happening. */
+export const liveRefetchInterval = (query: { state: { data?: LeagueData } }) =>
+  query.state.data?.fixtures.some((f) => f.live) ? 15_000 : false;
 
 export function initials(name: string) {
   return name

@@ -262,3 +262,62 @@ for that match and the admin Discipline tab.
 
 **One SQL file to run**: `supabase-mpl-reference/postponed-position-foul-reason.sql`
 covers all three schema changes in this round.
+
+## Live match center, predictor leaderboard, head-to-head, multi-season, official assignment, WhatsApp share, sponsor visibility (27 Aug)
+
+One SQL file covers all the new schema: `supabase-mpl-reference/seasons-live-assignment-predictor.sql`.
+
+**Live match center**: `fixtures.live` (new column). A match official
+gets a "Go live at kickoff" / "End live match" button on the report card
+(separate from the postponed toggle). While a fixture is live, the
+public site polls every 15s (only while something is actually live —
+otherwise it's the normal 60s staleTime, no extra load) and shows a
+pulsing LIVE badge on the match card instead of the kickoff time.
+
+**Predictor leaderboard**: new `predictions` table (RLS: anyone can
+insert/read, no update/delete — picks are locked in once made, like a
+real bet slip; one pick per fixture per phone number, enforced by a
+unique constraint). The old version only saved picks to each visitor's
+own browser with no leaderboard — this replaces that with real
+submissions and a public leaderboard ranked by correct picks once
+matches are played.
+
+**Head-to-head record**: no schema change — computed client-side from
+existing fixtures data. Shows on each club's profile page as a
+per-opponent W-D-L/goals record. Naturally gets richer once multiple
+seasons of fixtures exist.
+
+**Multi-season tagging**: `season` column added to `fixtures` and
+`scorers` (existing rows backfilled to the current season label so
+nothing goes "seasonless"). Public Fixtures and Scoreboard pages get a
+season dropdown (only appears once more than one season exists in the
+data). **Important scope limit**: `table_rows` (the league table) is
+NOT season-tagged — it's keyed by `club_id` alone, so it can only ever
+hold one live standings row per club. Making the table itself
+historical would need a real primary-key change (`club_id` →
+`club_id + season`), which is riskier and wasn't done here. The
+practical effect: fixtures and top-scorer history will be browsable by
+season, but the league table itself always reflects "right now."
+
+**Referee/official assignment**: `fixtures.assigned_official_id` (new
+column, references the official's auth user id). Admins can assign an
+approved match official to a fixture from the Fixtures tab (dropdown
+pulled live from approved `match_official` accounts). Officials aren't
+hard-blocked from other fixtures — assigned ones are just surfaced
+first on their Dashboard overview ("Assigned to you" stat + "Your next
+assigned fixture" card).
+
+**WhatsApp result sharing**: no schema change. "Share result on
+WhatsApp" button next to Save on the match report form — builds a
+formatted result message (score, venue, date, MOTM, cards, official)
+from data already on the page and opens `wa.me` with it pre-filled for
+the official to send to whatever group they choose. This is manual
+sharing (a share-intent link), not an automated broadcast — a fully
+automated WhatsApp Business API/Twilio integration needs a paid
+account and phone number verification that can't be set up sight
+unseen, so this is the honest, immediately-usable version of that idea.
+
+**Sponsor visibility**: sponsors were already rendering in the footer;
+added a second, more visible "Proudly supported by" strip right under
+the homepage hero, since footer placement is easy to scroll past
+without noticing.

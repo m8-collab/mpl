@@ -28,6 +28,29 @@ function ClubPage() {
   const scorers = (data?.scorers ?? []).filter((s) => s.club_id === clubId);
   const [activePlayer, setActivePlayer] = useState<SquadPlayer | null>(null);
 
+  const headToHead = (() => {
+    const byOpponent = new Map<string, { w: number; d: number; l: number; gf: number; ga: number }>();
+    matches.forEach((f) => {
+      if (f.postponed || f.home_score === null || f.away_score === null) return;
+      const isHome = f.home_id === clubId;
+      const opponentId = isHome ? f.away_id : f.home_id;
+      if (!opponentId) return;
+      const gf = isHome ? f.home_score : f.away_score;
+      const ga = isHome ? f.away_score : f.home_score;
+      const rec = byOpponent.get(opponentId) ?? { w: 0, d: 0, l: 0, gf: 0, ga: 0 };
+      rec.gf += gf;
+      rec.ga += ga;
+      if (gf > ga) rec.w += 1;
+      else if (gf === ga) rec.d += 1;
+      else rec.l += 1;
+      byOpponent.set(opponentId, rec);
+    });
+    return Array.from(byOpponent.entries())
+      .map(([opponentId, rec]) => ({ opponent: data?.clubMap[opponentId], ...rec }))
+      .filter((r) => r.opponent)
+      .sort((a, b) => a.opponent!.name.localeCompare(b.opponent!.name));
+  })();
+
   if (!data) return <div className="mx-auto max-w-6xl px-4 py-16 text-sm text-muted-foreground">Loading club…</div>;
   if (!club)
     return (
@@ -127,6 +150,34 @@ function ClubPage() {
           </Link>
         </aside>
       </div>
+
+      {headToHead.length > 0 && (
+        <div className="mx-auto max-w-6xl px-4 pb-10 lg:px-8">
+          <h2 className="mb-4 font-display text-xl">Head-to-head record</h2>
+          <div className="surface-card divide-y divide-border overflow-x-auto">
+            {headToHead.map((r) => (
+              <div key={r.opponent!.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                <Link
+                  to="/clubs/$clubId"
+                  params={{ clubId: r.opponent!.id }}
+                  className="flex min-w-0 items-center gap-2 font-semibold hover:text-accent"
+                >
+                  <ClubBadge club={r.opponent!} size={22} />
+                  <span className="truncate">{r.opponent!.name}</span>
+                </Link>
+                <span className="shrink-0 text-muted-foreground">
+                  <span className="font-bold text-foreground">{r.w}</span>W{" "}
+                  <span className="font-bold text-foreground">{r.d}</span>D{" "}
+                  <span className="font-bold text-foreground">{r.l}</span>L
+                  <span className="ml-2">
+                    ({r.gf}-{r.ga})
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Dialog open={!!activePlayer} onOpenChange={(open) => !open && setActivePlayer(null)}>
         <DialogContent>

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { leagueQuery, fmtLongDate, type Fixture } from "@/lib/league";
+import { leagueQuery, liveRefetchInterval, fmtLongDate, type Fixture } from "@/lib/league";
 import { MatchCard } from "@/components/league/MatchCard";
 import { PageHeader } from "@/components/league/PageHeader";
 import { cn } from "@/lib/utils";
@@ -19,11 +19,15 @@ export const Route = createFileRoute("/fixtures")({
 });
 
 function FixturesPage() {
-  const { data } = useQuery(leagueQuery);
+  const { data } = useQuery({ ...leagueQuery, refetchInterval: liveRefetchInterval });
   const [tab, setTab] = useState<"upcoming" | "results">("upcoming");
+  const [season, setSeason] = useState<string>("");
 
   const played = (f: Fixture) => f.home_score !== null && f.away_score !== null;
-  const list = (data?.fixtures ?? []).filter((f) => (tab === "results" ? played(f) : !played(f)));
+  const seasons = data?.seasons ?? [];
+  const activeSeason = season || seasons[seasons.length - 1] || "";
+  const bySeasonList = (data?.fixtures ?? []).filter((f) => !activeSeason || !f.season || f.season === activeSeason);
+  const list = bySeasonList.filter((f) => (tab === "results" ? played(f) : !played(f)));
   const byDate = new Map<string, Fixture[]>();
   list.forEach((f) => byDate.set(f.date, [...(byDate.get(f.date) ?? []), f]));
   const dates = [...byDate.keys()].sort((a, b) => (tab === "results" ? b.localeCompare(a) : a.localeCompare(b)));
@@ -31,19 +35,34 @@ function FixturesPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 lg:px-8">
       <PageHeader eyebrow="Matchday" title="Fixtures & Results" />
-      <div className="mb-6 inline-flex rounded-sm border border-border bg-surface p-1">
-        {(["upcoming", "results"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={cn(
-              "rounded-sm px-4 py-2 font-display text-xs font-bold uppercase tracking-wide",
-              tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-            )}
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <div className="inline-flex rounded-sm border border-border bg-surface p-1">
+          {(["upcoming", "results"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "rounded-sm px-4 py-2 font-display text-xs font-bold uppercase tracking-wide",
+                tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {t === "upcoming" ? "Upcoming" : "Results"}
+            </button>
+          ))}
+        </div>
+        {seasons.length > 1 && (
+          <select
+            value={activeSeason}
+            onChange={(e) => setSeason(e.target.value)}
+            className="rounded-sm border border-border bg-surface px-3 py-2 font-display text-xs font-bold uppercase tracking-wide"
           >
-            {t === "upcoming" ? "Upcoming" : "Results"}
-          </button>
-        ))}
+            {seasons.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {!dates.length && <p className="text-sm text-muted-foreground">No matches to show yet.</p>}

@@ -13,6 +13,10 @@ export function MatchCard({ fixture, data }: { fixture: Fixture; data: LeagueDat
         <span className="eyebrow text-muted-foreground">{fmtDate(fixture.date)}</span>
         {fixture.postponed ? (
           <span className="eyebrow rounded-full bg-destructive/10 px-2 py-0.5 text-destructive">Postponed</span>
+        ) : fixture.live ? (
+          <span className="eyebrow flex items-center gap-1.5 rounded-full bg-destructive px-2 py-0.5 text-destructive-foreground">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" /> LIVE
+          </span>
         ) : (
           <span className="eyebrow text-accent">{played ? "FT" : (fixture.kickoff ?? "TBC")}</span>
         )}

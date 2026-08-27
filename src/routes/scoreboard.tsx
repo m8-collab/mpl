@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { leagueQuery, initials } from "@/lib/league";
 import { ClubBadge } from "@/components/league/ClubBadge";
 import { PageHeader } from "@/components/league/PageHeader";
@@ -18,12 +19,33 @@ export const Route = createFileRoute("/scoreboard")({
 
 function ScoreboardPage() {
   const { data } = useQuery(leagueQuery);
-  const scorers = data?.scorers ?? [];
+  const seasons = data?.seasons ?? [];
+  const [season, setSeason] = useState<string>("");
+  const activeSeason = season || seasons[seasons.length - 1] || "";
+  const scorers = (data?.scorers ?? [])
+    .filter((s) => !activeSeason || !s.season || s.season === activeSeason)
+    .slice()
+    .sort((a, b) => b.goals - a.goals);
   const podium = scorers.slice(0, 3);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 lg:px-8">
-      <PageHeader eyebrow="Golden Boot" title="Scoreboard" />
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <PageHeader eyebrow="Golden Boot" title="Scoreboard" />
+        {seasons.length > 1 && (
+          <select
+            value={activeSeason}
+            onChange={(e) => setSeason(e.target.value)}
+            className="rounded-sm border border-border bg-surface px-3 py-2 font-display text-xs font-bold uppercase tracking-wide"
+          >
+            {seasons.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
 
       {podium.length > 0 && (
         <div className="mb-8 grid gap-3 sm:grid-cols-3">
