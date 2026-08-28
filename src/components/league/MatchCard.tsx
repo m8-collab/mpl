@@ -43,6 +43,13 @@ export function MatchCard({ fixture, data }: { fixture: Fixture; data: LeagueDat
           )}
         </div>
       )}
+      <Link
+        to="/fixtures/$fixtureId"
+        params={{ fixtureId: fixture.id }}
+        className="mt-3 block border-t border-border pt-3 text-center text-xs font-bold uppercase tracking-wide text-accent hover:underline"
+      >
+        Match centre & squads →
+      </Link>
     </article>
   );
 }

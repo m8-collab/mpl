@@ -13,19 +13,19 @@ import { MatchOfficialDashboard } from "@/components/admin/MatchOfficialDashboar
 import { DashboardShell, StatCard, DashCard, type NavItem } from "@/components/admin/DashboardShell";
 import { LayoutDashboard, ClipboardList, CalendarClock } from "lucide-react";
 
-export const Route = createFileRoute("/officials")({
+export const Route = createFileRoute("/matchcom")({
   head: () => ({
     meta: [
-      { title: "Match Officials | Mtwapa Premier League" },
+      { title: "MatchCom | Mtwapa Premier League" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  component: OfficialsPage,
+  component: MatchComPage,
 });
 
 type Screen = "loading" | "login" | "register" | "forgot" | "reset" | "pending" | "dashboard";
 
-function OfficialsPage() {
+function MatchComPage() {
   const [screen, setScreen] = useState<Screen>("loading");
   const [session, setSession] = useState<Session | null>(null);
 
@@ -111,7 +111,7 @@ function LoginCard({ onRegister, onForgot }: { onRegister: () => void; onForgot:
   }
 
   return (
-    <AuthShell title="Match official login" description="Sign in to file a match report.">
+    <AuthShell title="MatchCom login" description="Sign in to file a match report.">
       <form onSubmit={submit} className="grid gap-3">
         <div className="grid gap-1.5">
           <Label htmlFor="loginEmail">Email</Label>
@@ -133,7 +133,7 @@ function LoginCard({ onRegister, onForgot }: { onRegister: () => void; onForgot:
       </form>
       <div className="mt-4 flex justify-between text-sm">
         <button onClick={onRegister} className="text-accent hover:underline">
-          Register as a match official
+          Register for MatchCom
         </button>
         <button onClick={onForgot} className="text-muted-foreground hover:underline">
           Forgot password?
@@ -179,7 +179,7 @@ function RegisterCard({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <AuthShell title="Register as match official" description="This account can only file match reports — it won't have access to the full admin panel.">
+    <AuthShell title="Register for MatchCom" description="This account can only file match reports — it won't have access to the full admin panel.">
       <form onSubmit={submit} className="grid gap-3">
         <div className="grid gap-1.5">
           <Label>Email</Label>
@@ -213,7 +213,7 @@ function ForgotCard({ onBack }: { onBack: () => void }) {
     e.preventDefault();
     setBusy(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: typeof window !== "undefined" ? `${window.location.origin}/officials` : undefined,
+      redirectTo: typeof window !== "undefined" ? `${window.location.origin}/matchcom` : undefined,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
@@ -318,7 +318,7 @@ function OfficialDashboardScreen({ session }: { session: Session }) {
   return (
     <DashboardShell
       portal="official"
-      brand="Match Officials"
+      brand="MatchCom"
       navItems={navItems}
       activeId={section}
       onSelect={setSection}

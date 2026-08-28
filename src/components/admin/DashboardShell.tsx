@@ -9,7 +9,7 @@ export type NavItem = {
 };
 
 /**
- * Shared shell for /admin and /officials. Same visual language (soft
+ * Shared shell for /admin and /matchcom. Same visual language (soft
  * rounded cards, icon sidebar, greeting header) on purpose — but each
  * portal passes its own brand label, nav items, and accent so the two
  * read as genuinely separate applications, not one dashboard with

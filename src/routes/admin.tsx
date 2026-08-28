@@ -320,10 +320,10 @@ function OfficialRedirectCard() {
   return (
     <AuthShell
       title="Wrong portal"
-      description="This account is a match official login — it doesn't have access to the full admin panel. Head to the match officials page to file a report instead."
+      description="This account is a MatchCom login — it does not have access to the full admin panel. Head to the MatchCom page to file a report instead."
     >
       <Button asChild className="w-full">
-        <a href="/officials">Go to Match Officials</a>
+        <a href="/matchcom">Go to MatchCom</a>
       </Button>
       <Button variant="outline" className="mt-2 w-full" onClick={() => supabase.auth.signOut()}>
         Sign out
@@ -579,10 +579,10 @@ function Dashboard({ session }: { session: Session }) {
                     {nextFixture.venue && <p className="text-xs text-muted-foreground">{nextFixture.venue}</p>}
                   </div>
                   <a
-                    href="/officials"
+                    href="/matchcom"
                     className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground"
                   >
-                    Go to Match Officials
+                    Go to MatchCom
                   </a>
                 </div>
               ) : (
@@ -772,7 +772,7 @@ function CreateOfficialForm({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div className="mb-4 rounded-2xl border border-border/60 bg-secondary/40 p-4">
-      <p className="mb-3 font-display text-xs font-black uppercase tracking-wide">Create a match official login</p>
+      <p className="mb-3 font-display text-xs font-black uppercase tracking-wide">Create a MatchCom login</p>
       <form onSubmit={submit} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
         <div className="grid gap-1.5">
           <Label>Email</Label>
@@ -791,7 +791,7 @@ function CreateOfficialForm({ onCreated }: { onCreated: () => void }) {
       </form>
       <p className="mt-2 text-xs text-muted-foreground">
         This creates a ready-to-use, already-approved login — no self-registration or approval step needed. Share the
-        email and password with the official directly; they can sign in at <code>/officials</code> right away.
+        email and password with the official directly; they can sign in at <code>/matchcom</code> right away.
       </p>
       {result && (
         <div className="mt-3 rounded-xl border border-mint/40 bg-mint/10 p-3 text-sm">
@@ -891,15 +891,15 @@ function AdminsPanel({ currentUserId }: { currentUserId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="font-display text-base uppercase tracking-wide">Match officials</CardTitle>
+          <CardTitle className="font-display text-base uppercase tracking-wide">MatchCom accounts</CardTitle>
           <CardDescription>
-            Restricted accounts, registered separately at <code>/officials</code> — they can only file match reports
+            Restricted accounts, registered separately at <code>/matchcom</code> — they can only file match reports
             there and have no access to this admin panel.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <CreateOfficialForm onCreated={load} />
-          <AccountsTable rows={officials} emptyText="No match official accounts yet." />
+          <AccountsTable rows={officials} emptyText="No MatchCom accounts yet." />
         </CardContent>
       </Card>
     </div>

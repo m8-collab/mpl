@@ -12,7 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as OfficialsRouteImport } from './routes/officials'
+import { Route as MatchcomRouteImport } from './routes/matchcom'
 import { Route as FixturesRouteImport } from './routes/fixtures'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as NewsRouteImport } from './routes/news'
@@ -21,6 +21,7 @@ import { Route as ScoreboardRouteImport } from './routes/scoreboard'
 import { Route as TableRouteImport } from './routes/table'
 import { Route as ClubsIndexRouteImport } from './routes/clubs.index'
 import { Route as ClubsClubIdRouteImport } from './routes/clubs.$clubId'
+import { Route as FixturesFixtureIdRouteImport } from './routes/fixtures.$fixtureId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -37,9 +38,9 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OfficialsRoute = OfficialsRouteImport.update({
-  id: '/officials',
-  path: '/officials',
+const MatchcomRoute = MatchcomRouteImport.update({
+  id: '/matchcom',
+  path: '/matchcom',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FixturesRoute = FixturesRouteImport.update({
@@ -82,12 +83,17 @@ const ClubsClubIdRoute = ClubsClubIdRouteImport.update({
   path: '/clubs/$clubId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FixturesFixtureIdRoute = FixturesFixtureIdRouteImport.update({
+  id: '/fixtures/$fixtureId',
+  path: '/fixtures/$fixtureId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
-  '/officials': typeof OfficialsRoute
+  '/matchcom': typeof MatchcomRoute
   '/fixtures': typeof FixturesRoute
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
@@ -95,13 +101,14 @@ export interface FileRoutesByFullPath {
   '/scoreboard': typeof ScoreboardRoute
   '/table': typeof TableRoute
   '/clubs/$clubId': typeof ClubsClubIdRoute
+  '/fixtures/$fixtureId': typeof FixturesFixtureIdRoute
   '/clubs/': typeof ClubsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
-  '/officials': typeof OfficialsRoute
+  '/matchcom': typeof MatchcomRoute
   '/fixtures': typeof FixturesRoute
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/scoreboard': typeof ScoreboardRoute
   '/table': typeof TableRoute
   '/clubs/$clubId': typeof ClubsClubIdRoute
+  '/fixtures/$fixtureId': typeof FixturesFixtureIdRoute
   '/clubs': typeof ClubsIndexRoute
 }
 export interface FileRoutesById {
@@ -116,7 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
-  '/officials': typeof OfficialsRoute
+  '/matchcom': typeof MatchcomRoute
   '/fixtures': typeof FixturesRoute
   '/gallery': typeof GalleryRoute
   '/news': typeof NewsRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/scoreboard': typeof ScoreboardRoute
   '/table': typeof TableRoute
   '/clubs/$clubId': typeof ClubsClubIdRoute
+  '/fixtures/$fixtureId': typeof FixturesFixtureIdRoute
   '/clubs/': typeof ClubsIndexRoute
 }
 export interface FileRouteTypes {
@@ -132,7 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
-    | '/officials'
+    | '/matchcom'
     | '/fixtures'
     | '/gallery'
     | '/news'
@@ -140,13 +149,14 @@ export interface FileRouteTypes {
     | '/scoreboard'
     | '/table'
     | '/clubs/$clubId'
+    | '/fixtures/$fixtureId'
     | '/clubs/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
     | '/admin'
-    | '/officials'
+    | '/matchcom'
     | '/fixtures'
     | '/gallery'
     | '/news'
@@ -154,13 +164,14 @@ export interface FileRouteTypes {
     | '/scoreboard'
     | '/table'
     | '/clubs/$clubId'
+    | '/fixtures/$fixtureId'
     | '/clubs'
   id:
     | '__root__'
     | '/'
     | '/about'
     | '/admin'
-    | '/officials'
+    | '/matchcom'
     | '/fixtures'
     | '/gallery'
     | '/news'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/scoreboard'
     | '/table'
     | '/clubs/$clubId'
+    | '/fixtures/$fixtureId'
     | '/clubs/'
   fileRoutesById: FileRoutesById
 }
@@ -175,7 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
-  OfficialsRoute: typeof OfficialsRoute
+  MatchcomRoute: typeof MatchcomRoute
   FixturesRoute: typeof FixturesRoute
   GalleryRoute: typeof GalleryRoute
   NewsRoute: typeof NewsRoute
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   ScoreboardRoute: typeof ScoreboardRoute
   TableRoute: typeof TableRoute
   ClubsClubIdRoute: typeof ClubsClubIdRoute
+  FixturesFixtureIdRoute: typeof FixturesFixtureIdRoute
   ClubsIndexRoute: typeof ClubsIndexRoute
 }
 
@@ -209,11 +222,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/officials': {
-      id: '/officials'
-      path: '/officials'
-      fullPath: '/officials'
-      preLoaderRoute: typeof OfficialsRouteImport
+    '/matchcom': {
+      id: '/matchcom'
+      path: '/matchcom'
+      fullPath: '/matchcom'
+      preLoaderRoute: typeof MatchcomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fixtures': {
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubsClubIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fixtures/$fixtureId': {
+      id: '/fixtures/$fixtureId'
+      path: '/fixtures/$fixtureId'
+      fullPath: '/fixtures/$fixtureId'
+      preLoaderRoute: typeof FixturesFixtureIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -279,7 +299,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
-  OfficialsRoute: OfficialsRoute,
+  MatchcomRoute: MatchcomRoute,
   FixturesRoute: FixturesRoute,
   GalleryRoute: GalleryRoute,
   NewsRoute: NewsRoute,
@@ -287,6 +307,7 @@ const rootRouteChildren: RootRouteChildren = {
   ScoreboardRoute: ScoreboardRoute,
   TableRoute: TableRoute,
   ClubsClubIdRoute: ClubsClubIdRoute,
+  FixturesFixtureIdRoute: FixturesFixtureIdRoute,
   ClubsIndexRoute: ClubsIndexRoute,
 }
 export const routeTree = rootRouteImport

@@ -321,3 +321,43 @@ unseen, so this is the honest, immediately-usable version of that idea.
 added a second, more visible "Proudly supported by" strip right under
 the homepage hero, since footer placement is easy to scroll past
 without noticing.
+
+## MatchCom rename, safe auto-updating table, fixture detail page with eligibility check (28 Aug)
+
+**Match Officials → MatchCom**: route renamed `/officials` → `/matchcom`
+(file, routeTree.gen.ts, and every visible label/link/page title updated
+to match). The database role value (`role = 'match_official'`) is
+unchanged on purpose — only the portal's name and URL changed, not the
+underlying account type.
+
+**Table now updates automatically after every result — safely this
+time**: new file `supabase-mpl-reference/safe-auto-table-update.sql`.
+Earlier in this project, an auto-recalculate trigger was tried and then
+turned off because it worked by wiping and rebuilding the whole table
+from every fixture's score — which blanked out real standings, since
+most historical matches were never entered with individual scores. This
+version is fundamentally different: it only applies the delta for the
+ONE fixture that changed (new result, corrected result, or a result
+removed/postponed), leaving every other club's row and whatever
+baseline is already there completely untouched. Whatever the table
+shows right now becomes the correct starting point — only new results
+from here on change anything. Safe to run even with real data in place.
+
+**Fixture detail page ("Match Centre")**: new route
+`/fixtures/$fixtureId`, reached via a "Match centre & squads →" link on
+every match card. Shows the match header (score/status/venue/postponed
+note), cards recorded, match official & MOTM if filed, and both teams'
+full squads side by side. Any player carrying an active disciplinary
+ban (5 yellow cards or a red card this season — the same rule the
+public Discipline page already uses) is flagged **Suspended** in their
+squad list.
+
+**Important honesty note on the suspension flag**: it reflects each
+player's *total season discipline record*, not a match-by-match ban
+countdown. There's no data model tracking which specific matches a
+suspension has already been served against (that would need per-fixture
+squad/appearance tracking, which doesn't exist yet — see the recommendation
+below). So a player will keep showing as Suspended for the rest of the
+season once they cross the threshold, even after they've actually served
+their 1 or 3 matches. Treat it as a strong heads-up to double-check, not
+an infallible auto-block.
