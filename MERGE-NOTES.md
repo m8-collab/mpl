@@ -361,3 +361,47 @@ below). So a player will keep showing as Suspended for the rest of the
 season once they cross the threshold, even after they've actually served
 their 1 or 3 matches. Treat it as a strong heads-up to double-check, not
 an infallible auto-block.
+
+## All 5 recommendations: real appearance tracking, squad PDF import, match photos, configurable discipline rules, contact form (28 Aug)
+
+One SQL file: `supabase-mpl-reference/appearances-photos-discipline-config-inquiries.sql`.
+
+**Real appearance tracking (fixes the suspension-countdown gap)**: new
+`appearances` table. The match official's report form now has a full
+lineup picker for both squads — mark each player Starting XI or
+Substitute, with sub-on/off minute fields, instead of the old free-text
+lineup boxes (which are left in place, unused, so no data was lost).
+Selecting a suspended player warns the official first (with the ban
+reason and matches remaining) but doesn't block it — matching what you
+asked for. A ban now counts as "served" match-by-match based on real
+appearance records, not just a season-long flag: `computeSuspensions()`
+in `league.ts` walks a player's fixtures since their ban started and
+only counts a match as served if they have no appearance in it. The
+Match Centre page and the lineup picker both now show live "X match(es)
+remaining" instead of a blanket Suspended tag.
+
+**Squad PDF import**: same pattern as the fixtures/scorers importers —
+upload a team-sheet PDF, review the extracted player/position/club
+matches in an editable table, then save. Handles either a single club's
+roster (pick a default club) or a multi-club document (each section
+starts with a line matching a club's name).
+
+**Match photos linked to a fixture**: this already existed via the
+match official's own photo upload (auto-creates/reuses an album tied to
+that fixture) — the missing piece was just the `albums.fixture_id`
+column backing it, now added. The Match Centre page shows a "Photos
+from this match" section once any exist.
+
+**Admin-configurable discipline rules**: the yellow-card threshold and
+ban lengths (previously hardcoded: 5 yellows → 1 match, any red → 3
+matches) are now in Settings → Discipline rules. Changes apply
+immediately everywhere that reads discipline data (public Discipline
+page, Match Centre suspension flags, the lineup picker's warning) —
+there's no separate publish step.
+
+**Contact / inquiry form**: new `inquiries` table. Every club page has
+a "Contact {club}" form (name, phone, message) in the sidebar. Submissions
+are admin-only — RLS blocks anyone else from reading them, and they're
+deliberately NOT part of the public league data fetch. New "Inquiries"
+tab in `/admin` lists them with a read/unread toggle and an unread-count
+badge.

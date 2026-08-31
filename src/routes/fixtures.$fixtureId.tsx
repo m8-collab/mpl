@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { leagueQuery, liveRefetchInterval, fmtLongDate, type PlayerDiscipline, type Club, type SquadPlayer } from "@/lib/league";
+import { leagueQuery, liveRefetchInterval, fmtLongDate, type SuspensionStatus, type Club, type SquadPlayer } from "@/lib/league";
 import { ClubBadge } from "@/components/league/ClubBadge";
 
 export const Route = createFileRoute("/fixtures/$fixtureId")({
@@ -34,9 +34,13 @@ function FixtureDetailPage() {
   const away = fixture.away_id ? data.clubMap[fixture.away_id] : undefined;
   const played = fixture.home_score !== null && fixture.away_score !== null;
   const fixtureCards = data.cards.filter((c) => c.fixture_id === fixture.id);
+  const fixtureAlbum = data.albums.find((a) => a.fixture_id === fixture.id);
+  const fixturePhotos = fixtureAlbum ? data.photos.filter((p) => p.album_id === fixtureAlbum.id) : [];
+  const homeLineup = data.appearances.filter((a) => a.fixture_id === fixture.id && a.club_id === fixture.home_id);
+  const awayLineup = data.appearances.filter((a) => a.fixture_id === fixture.id && a.club_id === fixture.away_id);
 
   // Keyed the same way computeDiscipline() keys its map, so lookups line up.
-  const disciplineMap: Map<string, PlayerDiscipline> = new Map(data.discipline.map((d) => [`${d.clubId ?? ""}::${d.playerName}`, d]));
+  const disciplineMap: Map<string, SuspensionStatus> = new Map(data.suspensions.map((d) => [`${d.clubId ?? ""}::${d.playerName}`, d]));
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 lg:px-8">
@@ -97,12 +101,30 @@ function FixtureDetailPage() {
         )}
       </div>
 
+      {(homeLineup.length > 0 || awayLineup.length > 0) && (
+        <div className="mt-6 grid gap-6 sm:grid-cols-2">
+          <LineupColumn name={home?.name ?? "Home"} appearances={homeLineup} />
+          <LineupColumn name={away?.name ?? "Away"} appearances={awayLineup} />
+        </div>
+      )}
+
+      {fixturePhotos.length > 0 && (
+        <div className="mt-6">
+          <h2 className="mb-3 font-display text-sm font-black uppercase tracking-wide">Photos from this match</h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {fixturePhotos.map((p) => (
+              <img key={p.id} src={p.url} alt={p.caption ?? ""} className="aspect-square w-full rounded-sm object-cover" />
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="mt-6 text-xs text-muted-foreground">
-        Players marked <span className="font-semibold text-destructive">SUSPENDED</span> below are carrying an
-        active disciplinary ban (5 yellow cards or any red card this season) and shouldn't be selected. This
-        reflects each player's total season discipline record — it doesn't automatically track how many of their
-        ban matches have already been served, so double-check against recent team sheets near the end of a
-        suspension.
+        Players marked <span className="font-semibold text-destructive">SUSPENDED</span> below are still serving an
+        active disciplinary ban (5 yellow cards or any red card this season, by default — configurable in Settings).
+        This is tracked match-by-match: a game only counts as "served" once it's been played AND the player has no
+        recorded appearance in it. If a suspended player is selected anyway, the match official is warned but can
+        proceed — that match then won't count toward serving the ban.
       </p>
 
       <div className="mt-4 grid gap-6 sm:grid-cols-2">
@@ -120,7 +142,7 @@ function SquadColumn({
 }: {
   club?: Club;
   squad: SquadPlayer[];
-  disciplineMap: Map<string, PlayerDiscipline>;
+  disciplineMap: Map<string, SuspensionStatus>;
 }) {
   return (
     <div className="surface-card p-4">
@@ -131,7 +153,7 @@ function SquadColumn({
         <ul className="grid gap-2">
           {squad.map((p) => {
             const discipline = club ? disciplineMap.get(`${club.id}::${p.player_name}`) : undefined;
-            const suspended = (discipline?.banMatches ?? 0) > 0;
+            const suspended = discipline?.suspended ?? false;
             return (
               <li
                 key={p.id}
@@ -144,14 +166,53 @@ function SquadColumn({
                   {p.position && <span className="ml-2 text-xs text-muted-foreground">{p.position}</span>}
                 </span>
                 {suspended && (
-                  <span className="eyebrow shrink-0 rounded-full bg-destructive px-2 py-0.5 text-destructive-foreground" title={discipline?.banReason ?? undefined}>
-                    Suspended
+                  <span
+                    className="eyebrow shrink-0 rounded-full bg-destructive px-2 py-0.5 text-destructive-foreground"
+                    title={`${discipline?.banReason ?? ""} — ${discipline?.matchesRemaining} match(es) remaining`}
+                  >
+                    Suspended ({discipline?.matchesRemaining} left)
                   </span>
                 )}
               </li>
             );
           })}
         </ul>
+      )}
+    </div>
+  );
+}
+
+function LineupColumn({ name, appearances }: { name: string; appearances: { player_name: string; started: boolean; subbed_on_minute: number | null; subbed_off_minute: number | null }[] }) {
+  const starters = appearances.filter((a) => a.started);
+  const subs = appearances.filter((a) => !a.started);
+  return (
+    <div className="surface-card p-4">
+      <h2 className="mb-3 font-display text-sm font-black uppercase tracking-wide">{name} lineup</h2>
+      {starters.length > 0 && (
+        <>
+          <p className="eyebrow mb-1 text-muted-foreground">Starting XI</p>
+          <ul className="mb-3 grid gap-1 text-sm">
+            {starters.map((a) => (
+              <li key={a.player_name}>
+                {a.player_name}
+                {a.subbed_off_minute !== null && <span className="text-muted-foreground"> (off {a.subbed_off_minute}')</span>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {subs.length > 0 && (
+        <>
+          <p className="eyebrow mb-1 text-muted-foreground">Substitutes used</p>
+          <ul className="grid gap-1 text-sm">
+            {subs.map((a) => (
+              <li key={a.player_name}>
+                {a.player_name}
+                {a.subbed_on_minute !== null && <span className="text-muted-foreground"> (on {a.subbed_on_minute}')</span>}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

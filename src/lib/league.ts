@@ -67,6 +67,18 @@ export type Sponsor = {
   sort_order: number;
 };
 
+/** Contact-form submissions — admin-only, never included in the public
+ *  league fetch (see fetchInquiries() instead, used only from /admin). */
+export type Inquiry = {
+  id: number;
+  name: string;
+  phone: string;
+  club_id: string | null;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
+
 /**
  * A player's disciplinary standing, derived from `cards`.
  *
@@ -88,6 +100,13 @@ export type PlayerDiscipline = {
 const YELLOW_THRESHOLD = 5;
 const YELLOW_BAN_MATCHES = 1;
 const RED_BAN_MATCHES = 3;
+
+export type DisciplineRules = { yellowThreshold: number; yellowBanMatches: number; redBanMatches: number };
+export const DEFAULT_DISCIPLINE_RULES: DisciplineRules = {
+  yellowThreshold: YELLOW_THRESHOLD,
+  yellowBanMatches: YELLOW_BAN_MATCHES,
+  redBanMatches: RED_BAN_MATCHES,
+};
 
 export function actualResult(f: Fixture): "home" | "draw" | "away" | null {
   if (f.postponed || f.home_score === null || f.away_score === null) return null;
@@ -114,7 +133,7 @@ export function computePredictorLeaderboard(predictions: Prediction[], fixtures:
   return Array.from(byPhone.values()).sort((a, b) => b.correct - a.correct || b.total - a.total);
 }
 
-export function computeDiscipline(cards: CardEntry[]): PlayerDiscipline[] {
+export function computeDiscipline(cards: CardEntry[], rules: DisciplineRules = DEFAULT_DISCIPLINE_RULES): PlayerDiscipline[] {
   const byPlayer = new Map<string, PlayerDiscipline>();
   for (const c of cards) {
     const key = `${c.club_id ?? ""}::${c.player_name}`;
@@ -133,17 +152,102 @@ export function computeDiscipline(cards: CardEntry[]): PlayerDiscipline[] {
 
   for (const entry of byPlayer.values()) {
     if (entry.redCount > 0) {
-      entry.banMatches = RED_BAN_MATCHES;
-      entry.banReason = `Red card — ${RED_BAN_MATCHES}-match ban`;
-    } else if (entry.yellowCount >= YELLOW_THRESHOLD) {
-      entry.banMatches = YELLOW_BAN_MATCHES;
-      entry.banReason = `${YELLOW_THRESHOLD} yellow cards — ${YELLOW_BAN_MATCHES}-match ban`;
+      entry.banMatches = rules.redBanMatches;
+      entry.banReason = `Red card — ${rules.redBanMatches}-match ban`;
+    } else if (entry.yellowCount >= rules.yellowThreshold) {
+      entry.banMatches = rules.yellowBanMatches;
+      entry.banReason = `${rules.yellowThreshold} yellow cards — ${rules.yellowBanMatches}-match ban`;
     }
   }
 
   return [...byPlayer.values()].sort(
     (a, b) => b.banMatches - a.banMatches || b.yellowCount + b.redCount - (a.yellowCount + a.redCount),
   );
+}
+
+export type Appearance = {
+  id: number;
+  fixture_id: string | null;
+  club_id: string | null;
+  player_name: string;
+  started: boolean;
+  subbed_on_minute: number | null;
+  subbed_off_minute: number | null;
+};
+
+export type SuspensionStatus = PlayerDiscipline & {
+  matchesServed: number;
+  matchesRemaining: number;
+  suspended: boolean;
+};
+
+/**
+ * Unlike computeDiscipline() (season totals, used for the public
+ * Discipline page), this tracks whether a ban has actually been SERVED —
+ * a match counts as served only if the player has no appearance record
+ * for it (or one where they never came on). If they were selected
+ * anyway (an official can warn-and-allow, not hard block), that match
+ * does not count toward serving the ban.
+ */
+export function computeSuspensions(
+  cards: CardEntry[],
+  fixtures: Fixture[],
+  appearances: Appearance[],
+  rules: DisciplineRules = DEFAULT_DISCIPLINE_RULES,
+): SuspensionStatus[] {
+  const fixtureMap = new Map(fixtures.map((f) => [f.id, f]));
+  const base = computeDiscipline(cards, rules);
+
+  const cardsByPlayer = new Map<string, CardEntry[]>();
+  cards.forEach((c) => {
+    const key = `${c.club_id ?? ""}::${c.player_name}`;
+    cardsByPlayer.set(key, [...(cardsByPlayer.get(key) ?? []), c]);
+  });
+
+  return base.map((entry) => {
+    if (entry.banMatches === 0) {
+      return { ...entry, matchesServed: 0, matchesRemaining: 0, suspended: false };
+    }
+
+    const key = `${entry.clubId ?? ""}::${entry.playerName}`;
+    const playerCards = (cardsByPlayer.get(key) ?? [])
+      .map((c) => ({ ...c, fixture: c.fixture_id ? fixtureMap.get(c.fixture_id) : undefined }))
+      .filter((c) => c.fixture)
+      .sort((a, b) => a.fixture!.date.localeCompare(b.fixture!.date));
+
+    let triggerDate: string | null = null;
+    const redCard = playerCards.find((c) => c.card_type === "red");
+    if (redCard) {
+      triggerDate = redCard.fixture!.date;
+    } else {
+      const yellows = playerCards.filter((c) => c.card_type === "yellow");
+      if (yellows.length >= rules.yellowThreshold) triggerDate = yellows[rules.yellowThreshold - 1].fixture!.date;
+    }
+    if (!triggerDate) return { ...entry, matchesServed: 0, matchesRemaining: entry.banMatches, suspended: true };
+
+    const clubId = entry.clubId;
+    const subsequentPlayed = fixtures
+      .filter(
+        (f) =>
+          (f.home_id === clubId || f.away_id === clubId) &&
+          f.date > triggerDate! &&
+          !f.postponed &&
+          f.home_score !== null &&
+          f.away_score !== null,
+      )
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    let served = 0;
+    for (const f of subsequentPlayed) {
+      if (served >= entry.banMatches) break;
+      const appeared = appearances.some(
+        (a) => a.fixture_id === f.id && a.club_id === clubId && a.player_name === entry.playerName && (a.started || a.subbed_on_minute !== null),
+      );
+      if (!appeared) served += 1;
+    }
+    const remaining = Math.max(0, entry.banMatches - served);
+    return { ...entry, matchesServed: served, matchesRemaining: remaining, suspended: remaining > 0 };
+  });
 }
 
 export type Scorer = {
@@ -199,6 +303,7 @@ export type LeagueData = {
   asOfLabel: string;
   editionLabel: string;
   socialLinks: { facebook: string | null; instagram: string | null; twitter: string | null; whatsapp: string | null };
+  disciplineRules: DisciplineRules;
   clubs: Club[];
   clubMap: Record<string, Club>;
   standings: Standing[];
@@ -210,6 +315,8 @@ export type LeagueData = {
   photos: Photo[];
   cards: CardEntry[];
   discipline: PlayerDiscipline[];
+  appearances: Appearance[];
+  suspensions: SuspensionStatus[];
   sponsors: Sponsor[];
   predictions: Prediction[];
   seasons: string[];
@@ -229,6 +336,7 @@ export async function fetchLeague(): Promise<LeagueData> {
     cardsRes,
     sponsorsRes,
     predictionsRes,
+    appearancesRes,
   ] = await Promise.all([
     supabase.from("clubs").select("*").order("name"),
     supabase.from("table_rows").select("*"),
@@ -242,6 +350,7 @@ export async function fetchLeague(): Promise<LeagueData> {
     supabase.from("cards").select("*").order("created_at", { ascending: false }),
     supabase.from("sponsors").select("*").order("sort_order"),
     supabase.from("predictions").select("*").order("created_at", { ascending: false }),
+    supabase.from("appearances").select("*"),
   ]);
 
   const clubs = (clubsRes.data ?? []) as Club[];
@@ -269,6 +378,12 @@ export async function fetchLeague(): Promise<LeagueData> {
   const cards = (cardsRes.data ?? []) as CardEntry[];
   const fixtures = (fixturesRes.data ?? []) as Fixture[];
   const scorers = (scorersRes.data ?? []) as Scorer[];
+  const appearances = (appearancesRes.data ?? []) as Appearance[];
+  const disciplineRules: DisciplineRules = {
+    yellowThreshold: settingsRes.data?.yellow_threshold ?? DEFAULT_DISCIPLINE_RULES.yellowThreshold,
+    yellowBanMatches: settingsRes.data?.yellow_ban_matches ?? DEFAULT_DISCIPLINE_RULES.yellowBanMatches,
+    redBanMatches: settingsRes.data?.red_ban_matches ?? DEFAULT_DISCIPLINE_RULES.redBanMatches,
+  };
   const seasons = Array.from(
     new Set([...fixtures.map((f) => f.season), ...scorers.map((s) => s.season)].filter((s): s is string => !!s)),
   ).sort();
@@ -283,6 +398,7 @@ export async function fetchLeague(): Promise<LeagueData> {
       twitter: settingsRes.data?.twitter_url ?? null,
       whatsapp: settingsRes.data?.whatsapp_url ?? null,
     },
+    disciplineRules,
     clubs,
     clubMap,
     standings,
@@ -293,11 +409,21 @@ export async function fetchLeague(): Promise<LeagueData> {
     albums: (albumsRes.data ?? []) as Album[],
     photos: (photosRes.data ?? []) as Photo[],
     cards,
-    discipline: computeDiscipline(cards),
+    discipline: computeDiscipline(cards, disciplineRules),
+    appearances,
+    suspensions: computeSuspensions(cards, fixtures, appearances, disciplineRules),
     sponsors: (sponsorsRes.data ?? []) as Sponsor[],
     predictions: (predictionsRes.data ?? []) as Prediction[],
     seasons,
   };
+}
+
+/** Admin-only — never bundled into the public league fetch (RLS also
+ *  blocks anyone but a full admin from reading these regardless). */
+export async function fetchInquiries(): Promise<Inquiry[]> {
+  const { data, error } = await supabase.from("inquiries").select("*").order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as Inquiry[];
 }
 
 export const leagueQuery = {

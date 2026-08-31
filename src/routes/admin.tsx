@@ -4,14 +4,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { toast, Toaster } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { leagueQuery } from "@/lib/league";
+import { leagueQuery, fetchInquiries, type Inquiry } from "@/lib/league";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EntityManager, type EntityConfig } from "@/components/admin/EntityManager";
-import { FixturePdfImport, ScorersPdfImport } from "@/components/admin/PdfImportManagers";
+import { FixturePdfImport, ScorersPdfImport, SquadPdfImport } from "@/components/admin/PdfImportManagers";
 import { DashboardShell, StatCard, DashCard, type NavItem } from "@/components/admin/DashboardShell";
 import {
   LayoutDashboard,
@@ -28,6 +28,7 @@ import {
   UserCog,
   Trophy,
   Goal,
+  Mail,
 } from "lucide-react";
 import { SquadsManager, GalleryManager } from "@/components/admin/UploadManagers";
 
@@ -410,18 +411,6 @@ function Dashboard({ session }: { session: Session }) {
       { name: "away_score", label: "Away score", type: "number" },
       { name: "match_official", label: "Match official (referee)", type: "text", showInList: false },
       { name: "man_of_the_match", label: "Man of the Match", type: "text", showInList: false, placeholder: "Player with the standout performance in this game" },
-      {
-        name: "home_lineup",
-        label: "Home lineup (starting XI + subs, one per line)",
-        type: "textarea",
-        showInList: false,
-      },
-      {
-        name: "away_lineup",
-        label: "Away lineup (starting XI + subs, one per line)",
-        type: "textarea",
-        showInList: false,
-      },
     ],
     numericFields: ["home_score", "away_score"],
     booleanFields: ["postponed", "live"],
@@ -524,6 +513,7 @@ function Dashboard({ session }: { session: Session }) {
     { id: "news", label: "News", icon: <Newspaper size={18} /> },
     { id: "gallery", label: "Gallery", icon: <ImageIcon size={18} /> },
     { id: "sponsors", label: "Sponsors", icon: <Handshake size={18} /> },
+    { id: "inquiries", label: "Inquiries", icon: <Mail size={18} /> },
     { id: "settings", label: "Settings", icon: <SettingsIcon size={18} /> },
     { id: "admins", label: "Admins", icon: <UserCog size={18} /> },
   ];
@@ -649,7 +639,12 @@ function Dashboard({ session }: { session: Session }) {
           <EntityManager config={scorersConfig} title="Scorer" onChanged={refreshPublicSite} />
         </>
       )}
-      {section === "squads" && <SquadsManager clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />}
+      {section === "squads" && (
+        <>
+          <SquadPdfImport clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
+          <SquadsManager clubs={data?.clubs ?? []} onChanged={refreshPublicSite} />
+        </>
+      )}
       {section === "cards" && (
         <>
           <EntityManager config={cardsConfig} title="Card" onChanged={refreshPublicSite} />
@@ -662,6 +657,7 @@ function Dashboard({ session }: { session: Session }) {
       {section === "news" && <EntityManager config={newsConfig} title="News post" onChanged={refreshPublicSite} />}
       {section === "gallery" && <GalleryManager onChanged={refreshPublicSite} />}
       {section === "sponsors" && <EntityManager config={sponsorsConfig} title="Sponsor" onChanged={refreshPublicSite} />}
+      {section === "inquiries" && <AdminInquiriesPanel />}
       {section === "settings" && <SettingsPanel config={settingsConfig} onChanged={refreshPublicSite} />}
       {section === "admins" && <AdminsPanel currentUserId={session.user.id} />}
     </DashboardShell>
@@ -672,6 +668,9 @@ function Dashboard({ session }: { session: Session }) {
 function SettingsPanel({ config, onChanged }: { config: EntityConfig; onChanged: () => void }) {
   const [seasonLabel, setSeasonLabel] = useState("");
   const [asOfLabel, setAsOfLabel] = useState("");
+  const [yellowThreshold, setYellowThreshold] = useState("5");
+  const [yellowBanMatches, setYellowBanMatches] = useState("1");
+  const [redBanMatches, setRedBanMatches] = useState("3");
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -684,6 +683,9 @@ function SettingsPanel({ config, onChanged }: { config: EntityConfig; onChanged:
       .then(({ data }) => {
         setSeasonLabel(data?.season_label ?? "");
         setAsOfLabel(data?.as_of_label ?? "");
+        setYellowThreshold(String(data?.yellow_threshold ?? 5));
+        setYellowBanMatches(String(data?.yellow_ban_matches ?? 1));
+        setRedBanMatches(String(data?.red_ban_matches ?? 3));
         setLoaded(true);
       });
   }, []);
@@ -693,7 +695,13 @@ function SettingsPanel({ config, onChanged }: { config: EntityConfig; onChanged:
     setBusy(true);
     const { error } = await supabase
       .from("settings")
-      .update({ season_label: seasonLabel || null, as_of_label: asOfLabel || null })
+      .update({
+        season_label: seasonLabel || null,
+        as_of_label: asOfLabel || null,
+        yellow_threshold: Number(yellowThreshold) || 5,
+        yellow_ban_matches: Number(yellowBanMatches) || 1,
+        red_ban_matches: Number(redBanMatches) || 3,
+      })
       .eq("id", 1);
     setBusy(false);
     if (error) return toast.error(error.message);
@@ -704,26 +712,52 @@ function SettingsPanel({ config, onChanged }: { config: EntityConfig; onChanged:
   if (!loaded) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   return (
-    <Card className="max-w-md">
-      <CardHeader>
-        <CardTitle className="font-display text-base uppercase tracking-wide">Site settings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={submit} className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label>Season label</Label>
-            <Input value={seasonLabel} onChange={(e) => setSeasonLabel(e.target.value)} placeholder="Season 2026 · 5th Edition" />
-          </div>
-          <div className="grid gap-1.5">
-            <Label>"As of" label</Label>
-            <Input value={asOfLabel} onChange={(e) => setAsOfLabel(e.target.value)} placeholder="as of 14 August 2026" />
-          </div>
-          <Button type="submit" disabled={busy} className="mt-1 w-fit">
-            {busy ? "Saving…" : "Save settings"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <div className="grid gap-4">
+      <Card className="max-w-md">
+        <CardHeader>
+          <CardTitle className="font-display text-base uppercase tracking-wide">Site settings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label>Season label</Label>
+              <Input value={seasonLabel} onChange={(e) => setSeasonLabel(e.target.value)} placeholder="Season 2026 · 5th Edition" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>"As of" label</Label>
+              <Input value={asOfLabel} onChange={(e) => setAsOfLabel(e.target.value)} placeholder="as of 14 August 2026" />
+            </div>
+
+            <div className="mt-2 border-t border-border pt-3">
+              <p className="mb-2 font-display text-xs font-black uppercase tracking-wide">Discipline rules</p>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Controls the ban logic used on the public Discipline page, the Match Centre suspension flag, and the
+                lineup picker's suspension warning. Changing these applies immediately to everyone's discipline
+                totals — there's no separate "apply" step.
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-1.5">
+                  <Label>Yellow cards for a ban</Label>
+                  <Input type="number" min={1} value={yellowThreshold} onChange={(e) => setYellowThreshold(e.target.value)} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Yellow ban (matches)</Label>
+                  <Input type="number" min={0} value={yellowBanMatches} onChange={(e) => setYellowBanMatches(e.target.value)} />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Red ban (matches)</Label>
+                  <Input type="number" min={0} value={redBanMatches} onChange={(e) => setRedBanMatches(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            <Button type="submit" disabled={busy} className="mt-1 w-fit">
+              {busy ? "Saving…" : "Save settings"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -808,6 +842,76 @@ function CreateOfficialForm({ onCreated }: { onCreated: () => void }) {
         </div>
       )}
     </div>
+  );
+}
+
+function AdminInquiriesPanel() {
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [clubMap, setClubMap] = useState<Record<string, string>>({});
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [rows, { data: clubs }] = await Promise.all([fetchInquiries(), supabase.from("clubs").select("id, name")]);
+      setInquiries(rows);
+      const m: Record<string, string> = {};
+      (clubs ?? []).forEach((c: any) => (m[c.id] = c.name));
+      setClubMap(m);
+    } catch (err: any) {
+      toast.error(err.message ?? "Couldn't load inquiries");
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function markRead(id: number, is_read: boolean) {
+    const { error } = await supabase.from("inquiries").update({ is_read }).eq("id", id);
+    if (error) return toast.error(error.message);
+    await load();
+  }
+
+  const unread = inquiries.filter((i) => !i.is_read).length;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-display text-base uppercase tracking-wide">
+          Contact inquiries {unread > 0 && <span className="ml-2 rounded-full bg-destructive px-2 py-0.5 text-xs text-destructive-foreground">{unread} new</span>}
+        </CardTitle>
+        <CardDescription>Messages submitted through club pages' contact forms.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : inquiries.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No inquiries yet.</p>
+        ) : (
+          <ul className="grid gap-3">
+            {inquiries.map((i) => (
+              <li key={i.id} className={`rounded-2xl border p-3 text-sm ${i.is_read ? "border-border" : "border-accent/50 bg-accent/5"}`}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-semibold">
+                    {i.name} · {i.phone}
+                    {i.club_id && <span className="ml-2 text-xs text-muted-foreground">re: {clubMap[i.club_id] ?? i.club_id}</span>}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{new Date(i.created_at).toLocaleDateString()}</span>
+                    <Button size="sm" variant="outline" onClick={() => markRead(i.id, !i.is_read)}>
+                      {i.is_read ? "Mark unread" : "Mark read"}
+                    </Button>
+                  </div>
+                </div>
+                <p className="mt-2 text-muted-foreground">{i.message}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

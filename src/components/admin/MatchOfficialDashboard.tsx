@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -14,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Club, Fixture, CardEntry, CardType } from "@/lib/league";
+import type { Club, Fixture, CardEntry, CardType, SquadPlayer, SuspensionStatus, Appearance } from "@/lib/league";
 
 type AlbumRow = { id: number; name: string; fixture_id: string | null };
 type PhotoRow = { id: number; url: string; caption: string | null; album_id: number | null };
@@ -43,10 +42,14 @@ const FOUL_REASONS = [
 export function MatchOfficialDashboard({
   clubs,
   fixtures,
+  squads,
+  suspensions,
   onChanged,
 }: {
   clubs: Club[];
   fixtures: Fixture[];
+  squads: Record<string, SquadPlayer[]>;
+  suspensions: SuspensionStatus[];
   onChanged?: () => void;
 }) {
   const clubMap = useMemo(() => {
@@ -79,8 +82,6 @@ export function MatchOfficialDashboard({
     away_score: "",
     match_official: "",
     man_of_the_match: "",
-    home_lineup: "",
-    away_lineup: "",
     postponed: false,
     postponed_note: "",
   });
@@ -93,8 +94,6 @@ export function MatchOfficialDashboard({
         away_score: "",
         match_official: "",
         man_of_the_match: "",
-        home_lineup: "",
-        away_lineup: "",
         postponed: false,
         postponed_note: "",
       });
@@ -105,8 +104,6 @@ export function MatchOfficialDashboard({
       away_score: fixture.away_score?.toString() ?? "",
       match_official: fixture.match_official ?? "",
       man_of_the_match: fixture.man_of_the_match ?? "",
-      home_lineup: fixture.home_lineup ?? "",
-      away_lineup: fixture.away_lineup ?? "",
       postponed: fixture.postponed ?? false,
       postponed_note: fixture.postponed_note ?? "",
     });
@@ -132,8 +129,6 @@ export function MatchOfficialDashboard({
         away_score: form.postponed ? null : form.away_score === "" ? null : Number(form.away_score),
         match_official: form.match_official || null,
         man_of_the_match: form.man_of_the_match || null,
-        home_lineup: form.home_lineup || null,
-        away_lineup: form.away_lineup || null,
         postponed: form.postponed,
         postponed_note: form.postponed ? form.postponed_note || null : null,
         ...(form.postponed ? { live: false } : {}),
@@ -168,6 +163,95 @@ export function MatchOfficialDashboard({
     else setCards([]);
     setCardForm({ club_id: "", player_name: "", card_type: "yellow", red_via_two_yellows: false, foul_reason: "" });
   }, [fixtureId]);
+
+  // ---- lineups (starting XI + subs) for this fixture ----
+  type LineupEntry = { selected: boolean; started: boolean; subbedOnMinute: string; subbedOffMinute: string };
+  const [lineup, setLineup] = useState<Record<string, LineupEntry>>({}); // keyed by `${club_id}::${player_name}`
+  const [savingLineup, setSavingLineup] = useState(false);
+  const suspensionMap = useMemo(
+    () => new Map(suspensions.map((s) => [`${s.clubId ?? ""}::${s.playerName}`, s])),
+    [suspensions],
+  );
+
+  useEffect(() => {
+    if (!fixtureId) {
+      setLineup({});
+      return;
+    }
+    supabase
+      .from("appearances")
+      .select("*")
+      .eq("fixture_id", fixtureId)
+      .then(({ data }) => {
+        const next: Record<string, LineupEntry> = {};
+        ((data as Appearance[]) ?? []).forEach((a) => {
+          next[`${a.club_id ?? ""}::${a.player_name}`] = {
+            selected: true,
+            started: a.started,
+            subbedOnMinute: a.subbed_on_minute?.toString() ?? "",
+            subbedOffMinute: a.subbed_off_minute?.toString() ?? "",
+          };
+        });
+        setLineup(next);
+      });
+  }, [fixtureId]);
+
+  function toggleLineupPlayer(clubId: string, playerName: string, started: boolean) {
+    const key = `${clubId}::${playerName}`;
+    const suspension = suspensionMap.get(key);
+    if (suspension?.suspended) {
+      const proceed = confirm(
+        `${playerName} is currently suspended (${suspension.banReason ?? "active ban"}, ${suspension.matchesRemaining} match(es) remaining). Select them anyway?`,
+      );
+      if (!proceed) return;
+    }
+    setLineup((prev) => {
+      const existing = prev[key];
+      if (existing?.selected && existing.started === started) {
+        // tapping the same state again clears the selection
+        const { [key]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [key]: { selected: true, started, subbedOnMinute: existing?.subbedOnMinute ?? "", subbedOffMinute: existing?.subbedOffMinute ?? "" } };
+    });
+  }
+
+  function updateLineupMinute(clubId: string, playerName: string, field: "subbedOnMinute" | "subbedOffMinute", value: string) {
+    const key = `${clubId}::${playerName}`;
+    setLineup((prev) => (prev[key] ? { ...prev, [key]: { ...prev[key], [field]: value } } : prev));
+  }
+
+  async function saveLineup() {
+    if (!fixtureId) return;
+    setSavingLineup(true);
+    try {
+      const rows = Object.entries(lineup)
+        .filter(([, v]) => v.selected)
+        .map(([key, v]) => {
+          const [club_id, player_name] = key.split("::");
+          return {
+            fixture_id: fixtureId,
+            club_id,
+            player_name,
+            started: v.started,
+            subbed_on_minute: v.subbedOnMinute === "" ? null : Number(v.subbedOnMinute),
+            subbed_off_minute: v.subbedOffMinute === "" ? null : Number(v.subbedOffMinute),
+          };
+        });
+      const { error: delErr } = await supabase.from("appearances").delete().eq("fixture_id", fixtureId);
+      if (delErr) throw delErr;
+      if (rows.length > 0) {
+        const { error: insErr } = await supabase.from("appearances").insert(rows);
+        if (insErr) throw insErr;
+      }
+      toast.success("Lineup saved");
+      onChanged?.();
+    } catch (err: any) {
+      toast.error(err.message ?? "Couldn't save the lineup");
+    } finally {
+      setSavingLineup(false);
+    }
+  }
 
   async function addCard(e: FormEvent) {
     e.preventDefault();
@@ -385,24 +469,6 @@ export function MatchOfficialDashboard({
                     />
                   </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5">
-                    <Label>{homeClub?.name ?? "Home"} lineup (XI + subs, one per line)</Label>
-                    <Textarea
-                      rows={6}
-                      value={form.home_lineup}
-                      onChange={(e) => setForm((f) => ({ ...f, home_lineup: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid gap-1.5">
-                    <Label>{awayClub?.name ?? "Away"} lineup (XI + subs, one per line)</Label>
-                    <Textarea
-                      rows={6}
-                      value={form.away_lineup}
-                      onChange={(e) => setForm((f) => ({ ...f, away_lineup: e.target.value }))}
-                    />
-                  </div>
-                </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button type="submit" disabled={savingReport}>
                     {savingReport ? "Saving…" : "Save match report"}
@@ -550,6 +616,40 @@ export function MatchOfficialDashboard({
 
           <Card>
             <CardHeader>
+              <CardTitle className="font-display text-base uppercase tracking-wide">Lineups</CardTitle>
+              <CardDescription>
+                Pick the starting XI and any substitutes used for each side. This is what powers real suspension
+                tracking — a banned player's match only counts as "served" if they have no appearance recorded here.
+                Selecting a suspended player warns you first but doesn't block it, in case a ban needs correcting.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <LineupPicker
+                  club={homeClub}
+                  squad={homeClub ? squads[homeClub.id] ?? [] : []}
+                  lineup={lineup}
+                  suspensionMap={suspensionMap}
+                  onToggle={toggleLineupPlayer}
+                  onMinuteChange={updateLineupMinute}
+                />
+                <LineupPicker
+                  club={awayClub}
+                  squad={awayClub ? squads[awayClub.id] ?? [] : []}
+                  lineup={lineup}
+                  suspensionMap={suspensionMap}
+                  onToggle={toggleLineupPlayer}
+                  onMinuteChange={updateLineupMinute}
+                />
+              </div>
+              <Button type="button" onClick={saveLineup} disabled={savingLineup} className="w-fit">
+                {savingLineup ? "Saving…" : "Save lineups"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle className="font-display text-base uppercase tracking-wide">Matchday photos</CardTitle>
               <CardDescription>
                 {album ? `Uploading into "${album.name}"` : "Uploading will create a folder for this match automatically."}
@@ -590,6 +690,87 @@ export function MatchOfficialDashboard({
             </CardContent>
           </Card>
         </>
+      )}
+    </div>
+  );
+}
+
+function LineupPicker({
+  club,
+  squad,
+  lineup,
+  suspensionMap,
+  onToggle,
+  onMinuteChange,
+}: {
+  club?: Club;
+  squad: SquadPlayer[];
+  lineup: Record<string, { selected: boolean; started: boolean; subbedOnMinute: string; subbedOffMinute: string }>;
+  suspensionMap: Map<string, SuspensionStatus>;
+  onToggle: (clubId: string, playerName: string, started: boolean) => void;
+  onMinuteChange: (clubId: string, playerName: string, field: "subbedOnMinute" | "subbedOffMinute", value: string) => void;
+}) {
+  if (!club) return null;
+  return (
+    <div className="rounded-2xl border border-border/60 p-3">
+      <p className="mb-2 font-display text-xs font-black uppercase tracking-wide">{club.name}</p>
+      {squad.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No squad list for this club yet — add one under Squads.</p>
+      ) : (
+        <ul className="grid gap-2">
+          {squad.map((p) => {
+            const key = `${club.id}::${p.player_name}`;
+            const entry = lineup[key];
+            const suspension = suspensionMap.get(key);
+            return (
+              <li key={p.id} className={`rounded-xl border px-3 py-2 text-sm ${suspension?.suspended ? "border-destructive/40 bg-destructive/5" : "border-border"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span>
+                    {p.player_name}
+                    {suspension?.suspended && <span className="ml-2 text-xs font-bold text-destructive">SUSPENDED ({suspension.matchesRemaining} left)</span>}
+                  </span>
+                  <div className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => onToggle(club.id, p.player_name, true)}
+                      className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase ${entry?.selected && entry.started ? "bg-accent text-accent-foreground" : "border border-border text-muted-foreground"}`}
+                    >
+                      XI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onToggle(club.id, p.player_name, false)}
+                      className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase ${entry?.selected && !entry.started ? "bg-mint text-[#04231a]" : "border border-border text-muted-foreground"}`}
+                    >
+                      Sub
+                    </button>
+                  </div>
+                </div>
+                {entry?.selected && (
+                  <div className="mt-2 flex gap-2">
+                    {entry.started ? (
+                      <Input
+                        type="number"
+                        placeholder="Subbed off (min)"
+                        value={entry.subbedOffMinute}
+                        onChange={(e) => onMinuteChange(club.id, p.player_name, "subbedOffMinute", e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    ) : (
+                      <Input
+                        type="number"
+                        placeholder="Subbed on (min)"
+                        value={entry.subbedOnMinute}
+                        onChange={(e) => onMinuteChange(club.id, p.player_name, "subbedOnMinute", e.target.value)}
+                        className="h-8 text-xs"
+                      />
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );

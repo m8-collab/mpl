@@ -260,3 +260,82 @@ export function parseScorersFromText(text: string, clubs: Club[]): ParsedScorer[
 
   return results;
 }
+
+/* ------------------------------------------------------------------ */
+/* Squad parsing                                                       */
+/* ------------------------------------------------------------------ */
+
+export type ParsedSquadPlayer = {
+  key: string;
+  playerName: string;
+  clubId: string | null;
+  clubLabel: string;
+  position: string | null;
+  sourceLine: string;
+};
+
+const POSITION_PATTERNS: [RegExp, string][] = [
+  [/\b(goalkeeper|goalkeepers|gk)\b/i, "Goalkeeper"],
+  [/\b(defenders?|def|cb|rb|lb|centre[- ]?back|full[- ]?back)\b/i, "Defender"],
+  [/\b(midfielders?|mid|cm|cdm|cam|dm|am)\b/i, "Midfielder"],
+  [/\b(forwards?|fwd|strikers?|st|wingers?|lw|rw)\b/i, "Forward"],
+];
+
+function matchClubHeading(line: string, clubs: Club[]): Club | null {
+  const norm = normalize(line);
+  if (norm.length < 3 || norm.length > 40) return null; // headings are short — long lines are player rows
+  for (const club of clubs) {
+    if (norm === normalize(club.name) || norm === normalize(club.id)) return club;
+  }
+  return null;
+}
+
+/**
+ * Parses either a single-club roster (use defaultClubId for every player)
+ * or a multi-club document where each club's section starts with a
+ * heading line matching one of the known club names — whichever the
+ * source PDF actually looks like. A heading found mid-document switches
+ * which club subsequent rows are attributed to.
+ */
+export function parseSquadsFromText(text: string, clubs: Club[], defaultClubId?: string): ParsedSquadPlayer[] {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const results: ParsedSquadPlayer[] = [];
+  let currentClub: Club | null = clubs.find((c) => c.id === defaultClubId) ?? null;
+
+  lines.forEach((line, idx) => {
+    const heading = matchClubHeading(line, clubs);
+    if (heading) {
+      currentClub = heading;
+      return;
+    }
+
+    let position: string | null = null;
+    let nameOnly = line;
+    for (const [re, label] of POSITION_PATTERNS) {
+      if (re.test(line)) {
+        position = label;
+        nameOnly = line.replace(re, "").trim();
+        break;
+      }
+    }
+    // Strip a leading jersey number ("7. Name", "12 - Name") and trailing
+    // separators left over once the position keyword is removed.
+    nameOnly = nameOnly
+      .replace(/^\d+\s*[.)\-:]\s*/, "")
+      .replace(/[-–,:]\s*$/, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+    if (!nameOnly || nameOnly.length < 2 || /^\d+$/.test(nameOnly)) return;
+
+    results.push({
+      key: `sq${idx}`,
+      playerName: nameOnly,
+      clubId: currentClub?.id ?? null,
+      clubLabel: currentClub?.name ?? "",
+      position,
+      sourceLine: line,
+    });
+  });
+
+  return results;
+}

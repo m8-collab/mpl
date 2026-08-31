@@ -1,10 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { leagueQuery, initials, ordinal, type SquadPlayer } from "@/lib/league";
 import { ClubBadge } from "@/components/league/ClubBadge";
 import { MatchCard } from "@/components/league/MatchCard";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/clubs/$clubId")({
   head: () => ({
@@ -145,6 +150,7 @@ function ClubPage() {
               <p className="mt-2 text-sm text-muted-foreground">No goals recorded yet.</p>
             )}
           </div>
+          <ClubInquiryForm clubId={clubId} clubName={club.name} />
           <Link to="/clubs" className="eyebrow text-accent">
             ← All clubs
           </Link>
@@ -234,6 +240,59 @@ function ClubPage() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+function ClubInquiryForm({ clubId, clubName }: { clubId: string; clubName: string }) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await supabase.from("inquiries").insert({
+      name,
+      phone,
+      club_id: clubId,
+      message,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error("Couldn't send that — try again in a moment.");
+      return;
+    }
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div className="surface-card p-5">
+        <h2 className="font-display text-base">Message sent</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Thanks — {clubName} and the league admin can see your message. They'll reach out on the number you left if
+          needed.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="surface-card p-5">
+      <h2 className="font-display text-base">Contact {clubName}</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Player registration interest, sponsorship, or anything else — this goes straight to the league admin.
+      </p>
+      <form onSubmit={submit} className="mt-3 grid gap-2">
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required />
+        <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone number" required />
+        <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Your message" rows={3} required />
+        <Button type="submit" disabled={busy} size="sm" className="w-fit">
+          {busy ? "Sending…" : "Send message"}
+        </Button>
+      </form>
     </div>
   );
 }

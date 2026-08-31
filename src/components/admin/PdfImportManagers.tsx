@@ -6,8 +6,10 @@ import {
   extractPdfText,
   parseFixturesFromText,
   parseScorersFromText,
+  parseSquadsFromText,
   type ParsedFixture,
   type ParsedScorer,
+  type ParsedSquadPlayer,
 } from "@/lib/pdf-import";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -373,6 +375,188 @@ export function ScorersPdfImport({ clubs, seasonLabel, onChanged }: { clubs: Clu
             </p>
             <Button className="mt-3" onClick={saveAll} disabled={busy}>
               {busy ? "Saving…" : `Save ${rows.filter((r) => r.playerName && r.clubId && r.goals !== null).length} scorer(s)`}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Squads                                                               */
+/* ------------------------------------------------------------------ */
+
+export function SquadPdfImport({ clubs, onChanged }: { clubs: Club[]; onChanged?: () => void }) {
+  const [rows, setRows] = useState<ParsedSquadPlayer[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [defaultClubId, setDefaultClubId] = useState("");
+
+  const clubOptions = clubs.map((c) => ({ value: c.id, label: c.name }));
+
+  async function handleFile(file: File) {
+    setBusy(true);
+    setFileName(file.name);
+    try {
+      const text = await extractPdfText(file);
+      if (!text.trim()) {
+        toast.error("Couldn't read any text from that PDF — it may be a scanned image rather than a text document.");
+        setRows([]);
+        return;
+      }
+      const parsed = parseSquadsFromText(text, clubs, defaultClubId || undefined);
+      if (parsed.length === 0) {
+        toast.error("No player-looking lines found. Check the source PDF, or add players manually below.");
+      } else {
+        toast.success(`Found ${parsed.length} possible player${parsed.length === 1 ? "" : "s"} — review before saving.`);
+      }
+      setRows(parsed);
+    } catch (err: any) {
+      toast.error(err.message ?? "Couldn't read that PDF");
+      setRows(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function updateRow(key: string, patch: Partial<ParsedSquadPlayer>) {
+    setRows((prev) => prev?.map((r) => (r.key === key ? { ...r, ...patch } : r)) ?? null);
+  }
+
+  function removeRow(key: string) {
+    setRows((prev) => prev?.filter((r) => r.key !== key) ?? null);
+  }
+
+  async function saveAll() {
+    if (!rows) return;
+    const ready = rows.filter((r) => r.playerName && r.clubId);
+    if (ready.length === 0) {
+      toast.error("No rows are ready to save yet — every row needs a matched club.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const payload = ready.map((r) => ({
+        player_name: r.playerName,
+        club_id: r.clubId,
+        position: r.position,
+      }));
+      const { error } = await supabase.from("squads").insert(payload);
+      if (error) throw error;
+      toast.success(`Saved ${payload.length} player${payload.length === 1 ? "" : "s"}`);
+      setRows(null);
+      setFileName(null);
+      onChanged?.();
+    } catch (err: any) {
+      toast.error(err.message ?? "Couldn't save those players");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="font-display text-base uppercase tracking-wide">Import squad from PDF</CardTitle>
+        <CardDescription>
+          Upload a team-sheet or registration-list PDF — player names, positions, and club are extracted
+          automatically, but always review the table below before saving. Works for a single club's roster or a
+          document covering several clubs (each club's section should start with a line matching that club's name).
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <div className="grid gap-1.5 sm:max-w-xs">
+          <label className="text-xs font-semibold text-muted-foreground">
+            Default club (used if the PDF doesn't have club headings)
+          </label>
+          <Select value={defaultClubId} onValueChange={setDefaultClubId}>
+            <SelectTrigger>
+              <SelectValue placeholder="No default — rely on headings" />
+            </SelectTrigger>
+            <SelectContent>
+              {clubOptions.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Input
+          type="file"
+          accept="application/pdf"
+          disabled={busy}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+          }}
+        />
+        {fileName && <p className="text-xs text-muted-foreground">{busy ? "Reading…" : `Parsed: ${fileName}`}</p>}
+
+        {rows && rows.length > 0 && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Player</TableHead>
+                  <TableHead>Club</TableHead>
+                  <TableHead>Position</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((r) => (
+                  <TableRow key={r.key} className={!r.clubId ? "bg-destructive/5" : undefined}>
+                    <TableCell>
+                      <Input
+                        value={r.playerName}
+                        onChange={(e) => updateRow(r.key, { playerName: e.target.value })}
+                        className="min-w-[160px]"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Select value={r.clubId ?? ""} onValueChange={(v) => updateRow(r.key, { clubId: v })}>
+                        <SelectTrigger className="min-w-[150px]">
+                          <SelectValue placeholder={r.clubLabel || "Select club…"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {clubOptions.map((o) => (
+                            <SelectItem key={o.value} value={o.value}>
+                              {o.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Select value={r.position ?? ""} onValueChange={(v) => updateRow(r.key, { position: v })}>
+                        <SelectTrigger className="min-w-[130px]">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["Goalkeeper", "Defender", "Midfielder", "Forward"].map((p) => (
+                            <SelectItem key={p} value={p}>
+                              {p}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="destructive" onClick={() => removeRow(r.key)}>
+                        Remove
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Rows highlighted in red have no matched club — fix or remove them before saving.
+            </p>
+            <Button className="mt-3" onClick={saveAll} disabled={busy}>
+              {busy ? "Saving…" : `Save ${rows.filter((r) => r.playerName && r.clubId).length} player(s)`}
             </Button>
           </div>
         )}

@@ -374,7 +374,13 @@ function OfficialDashboardScreen({ session }: { session: Session }) {
       )}
 
       {section === "file-report" && (
-        <MatchOfficialDashboard clubs={data?.clubs ?? []} fixtures={data?.fixtures ?? []} onChanged={refresh} />
+        <MatchOfficialDashboard
+          clubs={data?.clubs ?? []}
+          fixtures={data?.fixtures ?? []}
+          squads={data?.squads ?? {}}
+          suspensions={data?.suspensions ?? []}
+          onChanged={refresh}
+        />
       )}
     </DashboardShell>
   );
