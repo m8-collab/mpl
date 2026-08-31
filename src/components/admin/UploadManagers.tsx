@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
   // picked in the add-player form, so adding a player and seeing them
   // land in their team's section happens in the same view.
   const [openClubId, setOpenClubId] = useState<string | null>(null);
+  const formRef = useRef<HTMLDivElement>(null);
 
   async function load() {
     setLoading(true);
@@ -67,6 +68,7 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
     setPosition(p.position ?? "");
     setFile(null);
     setOpenClubId(p.club_id);
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -119,7 +121,7 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
   const unattached = players.filter((p) => !p.club_id || !clubs.some((c) => c.id === p.club_id));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+    <div ref={formRef} className="grid gap-6 lg:grid-cols-[380px_1fr] scroll-mt-24">
       <Card>
         <CardHeader>
           <CardTitle className="font-display text-base uppercase tracking-wide">

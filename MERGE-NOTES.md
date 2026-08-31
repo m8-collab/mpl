@@ -405,3 +405,19 @@ are admin-only — RLS blocks anyone else from reading them, and they're
 deliberately NOT part of the public league data fetch. New "Inquiries"
 tab in `/admin` lists them with a read/unread toggle and an unread-count
 badge.
+
+## Fixed edit-scroll navigation, removed public Admin footer link (30 Aug)
+
+**Editing now actually jumps to the form**: `EntityManager`'s "Edit"
+button (used by Clubs, Table, Fixtures, Scoreboard, News, Sponsors — any
+generic admin list) had a real bug: it called
+`window.scrollTo({ top: window.scrollY })`, which scrolls to wherever
+you already are — a no-op. Clicking Edit did nothing visible, especially
+on mobile where the form sits above a long list. Fixed to actually
+scroll the form into view. Squads' own edit button had the same gap
+(no scroll call at all) and got the same fix.
+
+**Admin link removed from the public footer**: the small "Admin" link
+that sat next to the "as of" label is gone. `/admin` and `/matchcom`
+still work exactly the same if you type the URL directly — this just
+stops advertising the entry point to every visitor.

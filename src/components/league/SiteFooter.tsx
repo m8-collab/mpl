@@ -93,9 +93,6 @@ export function SiteFooter() {
           <p className="eyebrow text-primary-foreground/50">
             Table, fixtures &amp; scorers {data?.asOfLabel ?? ""}
           </p>
-          <Link to="/admin" className="mt-2 inline-block text-xs text-primary-foreground/40 hover:text-mint">
-            Admin
-          </Link>
         </div>
       </div>
 

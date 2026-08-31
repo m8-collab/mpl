@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,7 @@ export function EntityManager({
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [payload, setPayload] = useState<Record<string, any>>(emptyPayload(config.fields));
   const [saving, setSaving] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
 
   async function load() {
     setLoading(true);
@@ -87,7 +88,10 @@ export function EntityManager({
       next[f.name] = row[f.name] ?? "";
     });
     setPayload(next);
-    window.scrollTo({ top: window.scrollY, behavior: "smooth" });
+    // Jump straight to the edit form — on mobile especially, the form
+    // sits above a potentially long list, so "Edit" previously did
+    // nothing visible (it scrolled to wherever you already were).
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function cancelEdit() {
@@ -149,7 +153,7 @@ export function EntityManager({
   const listFields = config.fields.filter((f) => f.showInList !== false);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+    <div ref={formRef} className="grid gap-6 lg:grid-cols-[380px_1fr] scroll-mt-24">
       <Card>
         <CardHeader>
           <CardTitle className="font-display text-base uppercase tracking-wide">
