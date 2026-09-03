@@ -42,7 +42,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Screen = "loading" | "login" | "register" | "forgot" | "reset" | "pending" | "official-redirect" | "dashboard";
+type Screen = "loading" | "login" | "forgot" | "reset" | "pending" | "official-redirect" | "dashboard";
 
 function AdminPage() {
   const [screen, setScreen] = useState<Screen>("loading");
@@ -93,8 +93,7 @@ function AdminPage() {
     <div className={screen === "dashboard" ? "min-h-[70vh]" : "mx-auto min-h-[70vh] max-w-6xl px-4 py-10 lg:px-8"}>
       <Toaster richColors position="top-right" />
       {screen === "loading" && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {screen === "login" && <LoginCard onRegister={() => setScreen("register")} onForgot={() => setScreen("forgot")} />}
-      {screen === "register" && <RegisterCard onBack={() => setScreen("login")} />}
+      {screen === "login" && <LoginCard onForgot={() => setScreen("forgot")} />}
       {screen === "forgot" && <ForgotCard onBack={() => setScreen("login")} />}
       {screen === "reset" && <ResetCard onDone={() => setScreen("login")} />}
       {screen === "pending" && <PendingCard />}
@@ -125,7 +124,7 @@ function AuthShell({ title, description, children }: { title: string; descriptio
   );
 }
 
-function LoginCard({ onRegister, onForgot }: { onRegister: () => void; onForgot: () => void }) {
+function LoginCard({ onForgot }: { onForgot: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -159,67 +158,11 @@ function LoginCard({ onRegister, onForgot }: { onRegister: () => void; onForgot:
           {busy ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <div className="mt-4 flex justify-between text-sm">
-        <button onClick={onRegister} className="text-accent hover:underline">
-          Create an account
-        </button>
+      <div className="mt-4 flex justify-end text-sm">
         <button onClick={onForgot} className="text-muted-foreground hover:underline">
           Forgot password?
         </button>
       </div>
-    </AuthShell>
-  );
-}
-
-function RegisterCard({ onBack }: { onBack: () => void }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (password !== confirm) return toast.error("Passwords don't match");
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({ email, password });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setDone(true);
-  }
-
-  if (done) {
-    return (
-      <AuthShell title="Check your email" description="Confirm your address, then sign in — an existing admin will need to approve your account before you can make changes.">
-        <Button variant="outline" className="w-full" onClick={onBack}>
-          Back to login
-        </Button>
-      </AuthShell>
-    );
-  }
-
-  return (
-    <AuthShell title="Create admin account" description="You won't be able to change anything until an existing admin approves you.">
-      <form onSubmit={submit} className="grid gap-3">
-        <div className="grid gap-1.5">
-          <Label>Email</Label>
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Password</Label>
-          <Input type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Confirm password</Label>
-          <Input type="password" minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
-        </div>
-        <Button type="submit" disabled={busy} className="mt-1">
-          {busy ? "Creating…" : "Register"}
-        </Button>
-      </form>
-      <button onClick={onBack} className="mt-4 text-sm text-muted-foreground hover:underline">
-        Back to login
-      </button>
     </AuthShell>
   );
 }
@@ -761,11 +704,13 @@ function SettingsPanel({ config, onChanged }: { config: EntityConfig; onChanged:
   );
 }
 
-function CreateOfficialForm({ onCreated }: { onCreated: () => void }) {
+function CreateAccountForm({ role, onCreated }: { role: "admin" | "match_official"; onCreated: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ email: string; password: string } | null>(null);
+  const portalLabel = role === "admin" ? "admin" : "MatchCom";
+  const portalPath = role === "admin" ? "/admin" : "/matchcom";
 
   function generatePassword() {
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -787,7 +732,7 @@ function CreateOfficialForm({ onCreated }: { onCreated: () => void }) {
       const res = await fetch(`${supabaseUrl}/functions/v1/create-match-official`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password, role }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Couldn't create the account");
@@ -795,7 +740,7 @@ function CreateOfficialForm({ onCreated }: { onCreated: () => void }) {
       setResult({ email, password });
       setEmail("");
       setPassword("");
-      toast.success("Match official account created and approved");
+      toast.success(`${portalLabel} account created and approved`);
       onCreated();
     } catch (err: any) {
       toast.error(err.message ?? "Couldn't create the account");
@@ -806,7 +751,7 @@ function CreateOfficialForm({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div className="mb-4 rounded-2xl border border-border/60 bg-secondary/40 p-4">
-      <p className="mb-3 font-display text-xs font-black uppercase tracking-wide">Create a MatchCom login</p>
+      <p className="mb-3 font-display text-xs font-black uppercase tracking-wide">Create an {portalLabel} login</p>
       <form onSubmit={submit} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
         <div className="grid gap-1.5">
           <Label>Email</Label>
@@ -824,12 +769,13 @@ function CreateOfficialForm({ onCreated }: { onCreated: () => void }) {
         </Button>
       </form>
       <p className="mt-2 text-xs text-muted-foreground">
-        This creates a ready-to-use, already-approved login — no self-registration or approval step needed. Share the
-        email and password with the official directly; they can sign in at <code>/matchcom</code> right away.
+        This creates a ready-to-use, already-approved login — there's no self-registration anymore, so this is the
+        only way to get a new {portalLabel} account. Share the email and password directly; they can sign in at{" "}
+        <code>{portalPath}</code> right away.
       </p>
       {result && (
         <div className="mt-3 rounded-xl border border-mint/40 bg-mint/10 p-3 text-sm">
-          <p className="font-semibold">Share these credentials with the official:</p>
+          <p className="font-semibold">Share these credentials:</p>
           <p className="mt-1">
             Email: <code>{result.email}</code>
           </p>
@@ -986,9 +932,12 @@ function AdminsPanel({ currentUserId }: { currentUserId: string }) {
       <Card>
         <CardHeader>
           <CardTitle className="font-display text-base uppercase tracking-wide">Admin accounts</CardTitle>
-          <CardDescription>Full access — approve new registrations or revoke an existing admin's access.</CardDescription>
+          <CardDescription>
+            Full access. There's no self-registration — the only way to create a new admin account is right here.
+          </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
+          <CreateAccountForm role="admin" onCreated={load} />
           <AccountsTable rows={fullAdmins} emptyText="No admin accounts yet." />
         </CardContent>
       </Card>
@@ -997,12 +946,12 @@ function AdminsPanel({ currentUserId }: { currentUserId: string }) {
         <CardHeader>
           <CardTitle className="font-display text-base uppercase tracking-wide">MatchCom accounts</CardTitle>
           <CardDescription>
-            Restricted accounts, registered separately at <code>/matchcom</code> — they can only file match reports
-            there and have no access to this admin panel.
+            Restricted accounts that can only file match reports at <code>/matchcom</code> — no access to this admin
+            panel. There's no self-registration for these either — create them here.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <CreateOfficialForm onCreated={load} />
+          <CreateAccountForm role="match_official" onCreated={load} />
           <AccountsTable rows={officials} emptyText="No MatchCom accounts yet." />
         </CardContent>
       </Card>

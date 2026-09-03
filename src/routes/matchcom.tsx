@@ -23,7 +23,7 @@ export const Route = createFileRoute("/matchcom")({
   component: MatchComPage,
 });
 
-type Screen = "loading" | "login" | "register" | "forgot" | "reset" | "pending" | "dashboard";
+type Screen = "loading" | "login" | "forgot" | "reset" | "pending" | "dashboard";
 
 function MatchComPage() {
   const [screen, setScreen] = useState<Screen>("loading");
@@ -70,8 +70,7 @@ function MatchComPage() {
     <div className={screen === "dashboard" ? "min-h-[70vh]" : "mx-auto min-h-[70vh] max-w-5xl px-4 py-10 lg:px-8"}>
       <Toaster richColors position="top-right" />
       {screen === "loading" && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {screen === "login" && <LoginCard onRegister={() => setScreen("register")} onForgot={() => setScreen("forgot")} />}
-      {screen === "register" && <RegisterCard onBack={() => setScreen("login")} />}
+      {screen === "login" && <LoginCard onForgot={() => setScreen("forgot")} />}
       {screen === "forgot" && <ForgotCard onBack={() => setScreen("login")} />}
       {screen === "reset" && <ResetCard onDone={() => setScreen("login")} />}
       {screen === "pending" && <PendingCard />}
@@ -97,7 +96,7 @@ function AuthShell({ title, description, children }: { title: string; descriptio
   );
 }
 
-function LoginCard({ onRegister, onForgot }: { onRegister: () => void; onForgot: () => void }) {
+function LoginCard({ onForgot }: { onForgot: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -131,10 +130,7 @@ function LoginCard({ onRegister, onForgot }: { onRegister: () => void; onForgot:
           {busy ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <div className="mt-4 flex justify-between text-sm">
-        <button onClick={onRegister} className="text-accent hover:underline">
-          Register for MatchCom
-        </button>
+      <div className="mt-4 flex justify-end text-sm">
         <button onClick={onForgot} className="text-muted-foreground hover:underline">
           Forgot password?
         </button>
@@ -143,66 +139,6 @@ function LoginCard({ onRegister, onForgot }: { onRegister: () => void; onForgot:
   );
 }
 
-function RegisterCard({ onBack }: { onBack: () => void }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState(false);
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (password !== confirm) return toast.error("Passwords don't match");
-    setBusy(true);
-    // The role passed here lands in auth.users.raw_user_meta_data, which
-    // the handle_new_admin_signup trigger reads to set admins.role —
-    // this is what keeps this account restricted to match reports only,
-    // instead of getting full /admin access.
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { role: "match_official" } },
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setDone(true);
-  }
-
-  if (done) {
-    return (
-      <AuthShell title="Check your email" description="Confirm your address, then sign in — an admin still needs to approve your account before you can file reports.">
-        <Button variant="outline" className="w-full" onClick={onBack}>
-          Back to login
-        </Button>
-      </AuthShell>
-    );
-  }
-
-  return (
-    <AuthShell title="Register for MatchCom" description="This account can only file match reports — it won't have access to the full admin panel.">
-      <form onSubmit={submit} className="grid gap-3">
-        <div className="grid gap-1.5">
-          <Label>Email</Label>
-          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Password</Label>
-          <Input type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </div>
-        <div className="grid gap-1.5">
-          <Label>Confirm password</Label>
-          <Input type="password" minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
-        </div>
-        <Button type="submit" disabled={busy} className="mt-1">
-          {busy ? "Creating…" : "Register"}
-        </Button>
-      </form>
-      <button onClick={onBack} className="mt-4 text-sm text-muted-foreground hover:underline">
-        Back to login
-      </button>
-    </AuthShell>
-  );
-}
 
 function ForgotCard({ onBack }: { onBack: () => void }) {
   const [email, setEmail] = useState("");

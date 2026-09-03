@@ -1,10 +1,10 @@
 // Supabase Edge Function: create-match-official
 //
-// Lets a full admin create a ready-to-use login for a match official
-// directly (email + password set by the admin), instead of the official
-// self-registering and waiting for approval. This can't be done safely
-// from the browser — creating another person's auth account requires the
-// service role key, which must never be shipped to a client.
+// Lets a full admin create a ready-to-use login for either another full
+// admin or a match official (email + password set by the admin), instead
+// of anyone self-registering. This can't be done safely from the
+// browser — creating another person's auth account requires the service
+// role key, which must never be shipped to a client.
 //
 // Deploy: supabase functions deploy create-match-official
 // (SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY are
@@ -31,7 +31,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password } = await req.json();
+    const { email, password, role: requestedRole } = await req.json();
+    const role = requestedRole === "admin" ? "admin" : "match_official"; // anything else defaults safe
     if (!email || !password || password.length < 6) {
       return new Response(JSON.stringify({ error: "Email and a password (6+ chars) are required" }), {
         status: 400,
@@ -71,14 +72,14 @@ Deno.serve(async (req) => {
     }
 
     // Caller is a verified full admin — now use the service role to
-    // actually create the match official's account.
+    // actually create the account, as whichever role was requested.
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const { data: created, error: createErr } = await adminClient.auth.admin.createUser({
       email,
       password,
       email_confirm: true, // skip the confirmation email — the admin is vouching for this account directly
-      user_metadata: { role: "match_official" },
+      user_metadata: { role },
     });
     if (createErr || !created.user) {
       return new Response(JSON.stringify({ error: createErr?.message ?? "Couldn't create the account" }), {
@@ -101,7 +102,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ success: true, user_id: created.user.id, email }), {
+    return new Response(JSON.stringify({ success: true, user_id: created.user.id, email, role }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

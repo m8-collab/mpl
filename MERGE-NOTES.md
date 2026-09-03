@@ -421,3 +421,41 @@ scroll the form into view. Squads' own edit button had the same gap
 that sat next to the "as of" label is gone. `/admin` and `/matchcom`
 still work exactly the same if you type the URL directly — this just
 stops advertising the entry point to every visitor.
+
+## Self-registration removed from /admin and /matchcom (31 Aug)
+
+Nobody can create their own account anymore, on either portal. The
+"Create an account" / "Register for MatchCom" links and the whole
+sign-up flow are gone from both login screens — only "Sign in" and
+"Forgot password?" remain.
+
+The only way to get a new account now is an existing full admin
+creating it directly from `/admin` → Admins: both the "Admin accounts"
+and "MatchCom accounts" cards now have a "Create a login" form
+(email + password, generate-a-password button) that creates the
+account **already approved** — no pending state, no self-service path
+in at all. This reuses and extends the same edge function from before
+(`create-match-official` — kept the same name so no new deploy target
+is needed, it just now accepts a `role` so it can create either kind of
+account).
+
+**You need to redeploy the edge function for this to work**:
+```
+supabase functions deploy create-match-official
+```
+
+**Worth doing as a companion step, outside this codebase**: in the
+Supabase dashboard, under Authentication → Settings, there's an
+"Allow new user signups" toggle. Turning it off blocks account creation
+at the platform level too — closing the (much narrower) gap where
+someone technical could still call Supabase's public signup API
+directly rather than going through the website UI. Even without this,
+a direct API signup would only land them in the same "pending,
+unapproved" limbo as before, so it can't grant real access — but it's a
+free extra lock if you want it.
+
+## Admin footer link restored (31 Aug)
+
+Put back after all — pairs fine with removing self-registration: the
+link now just leads to a login-only screen with no sign-up path, so
+there's no real exposure from it being visible again.
