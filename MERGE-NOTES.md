@@ -459,3 +459,37 @@ free extra lock if you want it.
 Put back after all — pairs fine with removing self-registration: the
 link now just leads to a login-only screen with no sign-up path, so
 there's no real exposure from it being visible again.
+
+## News images, auto-updating Scoreboard from match goals, player photos everywhere (3 Sep)
+
+One SQL file: `supabase-mpl-reference/news-images-goals-scoreboard.sql`.
+
+**News images**: `news.image_url` (new column). Admin's News form gets a
+new "Image" field with direct upload (added a real `image` field type to
+the generic `EntityManager`, reusable by any future entity, not just
+news) — no more pasting URLs from elsewhere. Shows on the News page,
+homepage news preview, and in the admin list as a thumbnail.
+
+**Scoreboard now updates automatically from match goals**: new `goals`
+table + the same safe, incremental trigger pattern used for the league
+table and suspensions (adds/removes a delta, never wipes and
+recomputes). The match official's report form has a new "Goals"
+section (club, scorer, minute) right next to Cards — logging a goal
+there updates that player's total on the public Scoreboard immediately,
+no separate step. The Scoreboard admin tab still exists for bulk
+import, corrections, or historical totals from before per-match
+tracking existed.
+
+**Player photos now show on the Scoreboard and Match Centre**: the
+Scoreboard's podium and full list show each scorer's actual photo
+(looked up from their squad entry) instead of a generic initials
+circle, falling back to initials when no photo's on file. The Match
+Centre's squad lists do the same. (Club pages already had this from
+much earlier — this brings the rest of the site in line with it.)
+
+**Scoreboard ↔ Club pages connected, while staying separate menu
+items**: the Scoreboard podium's club name is now a real link to that
+club's page (the full list below it already had this). Nothing about
+the nav changed — Scoreboard and Clubs remain two separate items in the
+menu, this is just adding a cross-link between them where a scorer's
+club is mentioned.

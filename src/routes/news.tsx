@@ -25,18 +25,26 @@ function NewsPage() {
       <PageHeader eyebrow="Latest" title="League News" />
       {!news.length && <p className="text-sm text-muted-foreground">No stories published yet.</p>}
       {lead && (
-        <article className="pitch-panel mb-6 rounded-md p-8">
-          <p className="eyebrow text-mint">{lead.tag ?? "News"}</p>
-          <h2 className="mt-2 font-display text-2xl font-black lg:text-4xl">{lead.title}</h2>
-          {lead.body && <p className="mt-3 max-w-3xl text-sm text-primary-foreground/80">{lead.body}</p>}
+        <article className="pitch-panel mb-6 overflow-hidden rounded-md">
+          {lead.image_url && (
+            <img src={lead.image_url} alt={lead.title} className="h-56 w-full object-cover sm:h-72" />
+          )}
+          <div className="p-8">
+            <p className="eyebrow text-mint">{lead.tag ?? "News"}</p>
+            <h2 className="mt-2 font-display text-2xl font-black lg:text-4xl">{lead.title}</h2>
+            {lead.body && <p className="mt-3 max-w-3xl text-sm text-primary-foreground/80">{lead.body}</p>}
+          </div>
         </article>
       )}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {rest.map((n) => (
-          <article key={n.id} className="surface-card p-5">
-            <p className="eyebrow text-accent">{n.tag ?? "News"}</p>
-            <h3 className="mt-2 font-display text-base">{n.title}</h3>
-            {n.body && <p className="mt-2 text-sm text-muted-foreground">{n.body}</p>}
+          <article key={n.id} className="surface-card overflow-hidden p-0">
+            {n.image_url && <img src={n.image_url} alt={n.title} className="h-40 w-full object-cover" />}
+            <div className="p-5">
+              <p className="eyebrow text-accent">{n.tag ?? "News"}</p>
+              <h3 className="mt-2 font-display text-base">{n.title}</h3>
+              {n.body && <p className="mt-2 text-sm text-muted-foreground">{n.body}</p>}
+            </div>
           </article>
         ))}
       </div>

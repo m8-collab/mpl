@@ -34,6 +34,7 @@ function FixtureDetailPage() {
   const away = fixture.away_id ? data.clubMap[fixture.away_id] : undefined;
   const played = fixture.home_score !== null && fixture.away_score !== null;
   const fixtureCards = data.cards.filter((c) => c.fixture_id === fixture.id);
+  const fixtureGoals = data.goals.filter((g) => g.fixture_id === fixture.id).sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
   const fixtureAlbum = data.albums.find((a) => a.fixture_id === fixture.id);
   const fixturePhotos = fixtureAlbum ? data.photos.filter((p) => p.album_id === fixtureAlbum.id) : [];
   const homeLineup = data.appearances.filter((a) => a.fixture_id === fixture.id && a.club_id === fixture.home_id);
@@ -84,6 +85,16 @@ function FixtureDetailPage() {
           <div className="mt-4 grid gap-1 border-t border-border pt-3 text-center text-xs text-muted-foreground">
             {fixture.match_official && <p><span className="font-semibold text-foreground">Match official:</span> {fixture.match_official}</p>}
             {fixture.man_of_the_match && <p><span className="font-semibold text-foreground">Man of the Match:</span> {fixture.man_of_the_match}</p>}
+          </div>
+        )}
+        {fixtureGoals.length > 0 && (
+          <div className="mt-3 flex flex-wrap justify-center gap-2 border-t border-border pt-3">
+            {fixtureGoals.map((g) => (
+              <span key={g.id} className="eyebrow rounded-full bg-mint/10 px-2 py-0.5 text-[#0a7a58]">
+                ⚽ {g.player_name}
+                {g.minute !== null ? ` ${g.minute}'` : ""}
+              </span>
+            ))}
           </div>
         )}
         {fixtureCards.length > 0 && (
@@ -161,9 +172,18 @@ function SquadColumn({
                   suspended ? "border-destructive/40 bg-destructive/5" : "border-border"
                 }`}
               >
-                <span>
-                  <span className="font-semibold">{p.player_name}</span>
-                  {p.position && <span className="ml-2 text-xs text-muted-foreground">{p.position}</span>}
+                <span className="flex items-center gap-2">
+                  {p.photo_url ? (
+                    <img src={p.photo_url} alt={p.player_name} className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <span className="grid h-8 w-8 place-items-center rounded-full bg-secondary text-[0.6rem] font-bold text-muted-foreground">
+                      {p.player_name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                    </span>
+                  )}
+                  <span>
+                    <span className="font-semibold">{p.player_name}</span>
+                    {p.position && <span className="ml-2 text-xs text-muted-foreground">{p.position}</span>}
+                  </span>
                 </span>
                 {suspended && (
                   <span

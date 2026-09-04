@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export type FieldType = "text" | "number" | "date" | "time" | "textarea" | "select" | "boolean";
+export type FieldType = "text" | "number" | "date" | "time" | "textarea" | "select" | "boolean" | "image";
 
 export type FieldDef = {
   name: string;
@@ -29,6 +29,8 @@ export type FieldDef = {
   /** Disabled once editing an existing row (used for primary keys that can't change). */
   lockOnEdit?: boolean;
   placeholder?: string;
+  /** Only for type "image" — storage bucket to upload into. Defaults to "gallery". */
+  bucket?: string;
 };
 
 export type EntityConfig = {
@@ -64,6 +66,24 @@ export function EntityManager({
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [payload, setPayload] = useState<Record<string, any>>(emptyPayload(config.fields));
   const [saving, setSaving] = useState(false);
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
+  async function handleImageUpload(field: FieldDef, file: File) {
+    setUploadingField(field.name);
+    try {
+      const bucket = field.bucket ?? "gallery";
+      const path = `${Date.now()}-${file.name}`;
+      const { error: upErr } = await supabase.storage.from(bucket).upload(path, file);
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
+      setPayload((p) => ({ ...p, [field.name]: pub.publicUrl }));
+      toast.success("Image uploaded");
+    } catch (err: any) {
+      toast.error(err.message ?? "Upload failed");
+    } finally {
+      setUploadingField(null);
+    }
+  }
   const formRef = useRef<HTMLDivElement>(null);
 
   async function load() {
@@ -173,6 +193,23 @@ export function EntityManager({
                     onChange={(e) => setPayload((p) => ({ ...p, [f.name]: e.target.value }))}
                     required={f.required}
                   />
+                ) : f.type === "image" ? (
+                  <div className="grid gap-2">
+                    {payload[f.name] && (
+                      <img src={payload[f.name]} alt="" className="h-28 w-full rounded-sm object-cover" />
+                    )}
+                    <Input
+                      id={f.name}
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingField === f.name}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(f, file);
+                      }}
+                    />
+                    {uploadingField === f.name && <p className="text-xs text-muted-foreground">Uploading…</p>}
+                  </div>
                 ) : f.type === "select" || f.type === "boolean" ? (
                   <Select
                     value={payload[f.name] !== "" && payload[f.name] !== undefined ? String(payload[f.name]) : f.type === "boolean" ? "false" : ""}
@@ -255,7 +292,11 @@ export function EntityManager({
                             ? row[f.name]
                               ? "Yes"
                               : "No"
-                            : String(row[f.name] ?? "—")}
+                            : f.type === "image"
+                              ? row[f.name]
+                                ? <img src={row[f.name]} alt="" className="h-8 w-12 rounded-sm object-cover" />
+                                : "—"
+                              : String(row[f.name] ?? "—")}
                       </TableCell>
                     ))}
                     <TableCell className="text-right">

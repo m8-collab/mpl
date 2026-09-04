@@ -427,6 +427,7 @@ function Dashboard({ session }: { session: Session }) {
     fields: [
       { name: "tag", label: "Tag", type: "text", placeholder: "e.g. Matchday" },
       { name: "title", label: "Title", type: "text", required: true },
+      { name: "image_url", label: "Image", type: "image", showInList: false },
       { name: "body", label: "Body", type: "textarea", showInList: false },
     ],
   };
@@ -580,6 +581,11 @@ function Dashboard({ session }: { session: Session }) {
         <>
           <ScorersPdfImport clubs={data?.clubs ?? []} seasonLabel={data?.seasonLabel} onChanged={refreshPublicSite} />
           <EntityManager config={scorersConfig} title="Scorer" onChanged={refreshPublicSite} />
+          <p className="mt-3 text-xs text-muted-foreground">
+            Goals logged in a match report's "Goals" section on MatchCom add to a player's total here
+            automatically. This tab is for bulk import, one-off corrections, or entering historical totals that
+            predate per-match goal tracking.
+          </p>
         </>
       )}
       {section === "squads" && (

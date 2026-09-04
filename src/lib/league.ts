@@ -59,6 +59,15 @@ export type CardEntry = {
   created_at: string;
 };
 
+export type GoalEntry = {
+  id: number;
+  fixture_id: string | null;
+  club_id: string | null;
+  player_name: string;
+  minute: number | null;
+  created_at: string;
+};
+
 export type Sponsor = {
   id: number;
   name: string;
@@ -271,6 +280,7 @@ export type NewsItem = {
   tag: string | null;
   title: string;
   body: string | null;
+  image_url: string | null;
 };
 
 export type Album = {
@@ -314,6 +324,7 @@ export type LeagueData = {
   albums: Album[];
   photos: Photo[];
   cards: CardEntry[];
+  goals: GoalEntry[];
   discipline: PlayerDiscipline[];
   appearances: Appearance[];
   suspensions: SuspensionStatus[];
@@ -337,6 +348,7 @@ export async function fetchLeague(): Promise<LeagueData> {
     sponsorsRes,
     predictionsRes,
     appearancesRes,
+    goalsRes,
   ] = await Promise.all([
     supabase.from("clubs").select("*").order("name"),
     supabase.from("table_rows").select("*"),
@@ -351,6 +363,7 @@ export async function fetchLeague(): Promise<LeagueData> {
     supabase.from("sponsors").select("*").order("sort_order"),
     supabase.from("predictions").select("*").order("created_at", { ascending: false }),
     supabase.from("appearances").select("*"),
+    supabase.from("goals").select("*").order("created_at", { ascending: false }),
   ]);
 
   const clubs = (clubsRes.data ?? []) as Club[];
@@ -409,6 +422,7 @@ export async function fetchLeague(): Promise<LeagueData> {
     albums: (albumsRes.data ?? []) as Album[],
     photos: (photosRes.data ?? []) as Photo[],
     cards,
+    goals: (goalsRes.data ?? []) as GoalEntry[],
     discipline: computeDiscipline(cards, disciplineRules),
     appearances,
     suspensions: computeSuspensions(cards, fixtures, appearances, disciplineRules),

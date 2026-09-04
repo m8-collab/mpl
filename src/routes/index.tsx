@@ -132,12 +132,17 @@ function Index() {
             {data?.news[0] && (
               <div>
                 <SectionHead title="League news" to="/news" cta="More news" />
-                <article className="surface-card p-5">
-                  <p className="eyebrow text-accent">{data.news[0].tag ?? "News"}</p>
-                  <h3 className="mt-2 font-display text-base">{data.news[0].title}</h3>
-                  {data.news[0].body && (
-                    <p className="mt-2 text-sm text-muted-foreground">{data.news[0].body}</p>
+                <article className="surface-card overflow-hidden p-0">
+                  {data.news[0].image_url && (
+                    <img src={data.news[0].image_url} alt={data.news[0].title} className="h-40 w-full object-cover" />
                   )}
+                  <div className="p-5">
+                    <p className="eyebrow text-accent">{data.news[0].tag ?? "News"}</p>
+                    <h3 className="mt-2 font-display text-base">{data.news[0].title}</h3>
+                    {data.news[0].body && (
+                      <p className="mt-2 text-sm text-muted-foreground">{data.news[0].body}</p>
+                    )}
+                  </div>
                 </article>
               </div>
             )}

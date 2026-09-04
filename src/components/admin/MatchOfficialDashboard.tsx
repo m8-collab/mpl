@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Club, Fixture, CardEntry, CardType, SquadPlayer, SuspensionStatus, Appearance } from "@/lib/league";
+import type { Club, Fixture, CardEntry, CardType, GoalEntry, SquadPlayer, SuspensionStatus, Appearance } from "@/lib/league";
 
 type AlbumRow = { id: number; name: string; fixture_id: string | null };
 type PhotoRow = { id: number; url: string; caption: string | null; album_id: number | null };
@@ -277,6 +277,55 @@ export function MatchOfficialDashboard({
     const { error } = await supabase.from("cards").delete().eq("id", id);
     if (error) return toast.error(error.message);
     await loadCards(fixtureId);
+    onChanged?.();
+  }
+
+  // ---- goals — drives the public Scoreboard automatically via a DB trigger ----
+  const [goals, setGoals] = useState<GoalEntry[]>([]);
+  const [loadingGoals, setLoadingGoals] = useState(false);
+  const [goalForm, setGoalForm] = useState({ club_id: "", player_name: "", minute: "" });
+  const [savingGoal, setSavingGoal] = useState(false);
+
+  async function loadGoals(id: string) {
+    setLoadingGoals(true);
+    const { data, error } = await supabase
+      .from("goals")
+      .select("*")
+      .eq("fixture_id", id)
+      .order("created_at", { ascending: false });
+    if (error) toast.error(error.message);
+    setGoals((data as GoalEntry[]) ?? []);
+    setLoadingGoals(false);
+  }
+
+  useEffect(() => {
+    if (fixtureId) loadGoals(fixtureId);
+    else setGoals([]);
+    setGoalForm({ club_id: "", player_name: "", minute: "" });
+  }, [fixtureId]);
+
+  async function addGoal(e: FormEvent) {
+    e.preventDefault();
+    if (!fixtureId || !goalForm.club_id || !goalForm.player_name.trim()) return;
+    setSavingGoal(true);
+    const { error } = await supabase.from("goals").insert({
+      fixture_id: fixtureId,
+      club_id: goalForm.club_id,
+      player_name: goalForm.player_name.trim(),
+      minute: goalForm.minute === "" ? null : Number(goalForm.minute),
+    });
+    setSavingGoal(false);
+    if (error) return toast.error(error.message);
+    toast.success("Goal added — Scoreboard updated");
+    setGoalForm({ club_id: "", player_name: "", minute: "" });
+    await loadGoals(fixtureId);
+    onChanged?.();
+  }
+
+  async function deleteGoal(id: number) {
+    const { error } = await supabase.from("goals").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    await loadGoals(fixtureId);
     onChanged?.();
   }
 
@@ -610,6 +659,75 @@ export function MatchOfficialDashboard({
                 </ul>
               ) : (
                 <p className="text-sm text-muted-foreground">No cards recorded for this match.</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-display text-base uppercase tracking-wide">Goals</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+              <form onSubmit={addGoal} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+                <div className="grid gap-1.5">
+                  <Label>Club</Label>
+                  <Select value={goalForm.club_id} onValueChange={(v) => setGoalForm((g) => ({ ...g, club_id: v }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select club…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {matchClubOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Scorer</Label>
+                  <Input
+                    value={goalForm.player_name}
+                    onChange={(e) => setGoalForm((g) => ({ ...g, player_name: e.target.value }))}
+                    placeholder="Player name"
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>Minute</Label>
+                  <Input
+                    type="number"
+                    className="w-20"
+                    value={goalForm.minute}
+                    onChange={(e) => setGoalForm((g) => ({ ...g, minute: e.target.value }))}
+                  />
+                </div>
+                <Button type="submit" disabled={savingGoal || !goalForm.club_id || !goalForm.player_name.trim()}>
+                  Add goal
+                </Button>
+              </form>
+              <p className="text-xs text-muted-foreground">
+                Every goal logged here updates that player's total on the public Scoreboard automatically — no
+                separate step needed on the Scoreboard admin tab.
+              </p>
+
+              {loadingGoals ? (
+                <p className="text-sm text-muted-foreground">Loading…</p>
+              ) : goals.length ? (
+                <ul className="grid gap-2 text-sm">
+                  {goals.map((g) => (
+                    <li key={g.id} className="flex items-center justify-between border-b border-border pb-2 last:border-0">
+                      <span>
+                        ⚽ {g.player_name} · {g.club_id ? clubMap[g.club_id]?.name : "—"}
+                        {g.minute !== null && <span className="text-muted-foreground"> {g.minute}'</span>}
+                      </span>
+                      <Button size="sm" variant="destructive" onClick={() => deleteGoal(g.id)}>
+                        Remove
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No goals recorded for this match yet.</p>
               )}
             </CardContent>
           </Card>
