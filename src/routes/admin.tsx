@@ -42,7 +42,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Screen = "loading" | "login" | "forgot" | "reset" | "pending" | "official-redirect" | "dashboard";
+type Screen = "loading" | "login" | "register" | "forgot" | "reset" | "pending" | "official-redirect" | "dashboard";
 
 function AdminPage() {
   const [screen, setScreen] = useState<Screen>("loading");
@@ -93,7 +93,8 @@ function AdminPage() {
     <div className={screen === "dashboard" ? "min-h-[70vh]" : "mx-auto min-h-[70vh] max-w-6xl px-4 py-10 lg:px-8"}>
       <Toaster richColors position="top-right" />
       {screen === "loading" && <p className="text-sm text-muted-foreground">Loading…</p>}
-      {screen === "login" && <LoginCard onForgot={() => setScreen("forgot")} />}
+      {screen === "login" && <LoginCard onRegister={() => setScreen("register")} onForgot={() => setScreen("forgot")} />}
+      {screen === "register" && <RegisterCard onBack={() => setScreen("login")} />}
       {screen === "forgot" && <ForgotCard onBack={() => setScreen("login")} />}
       {screen === "reset" && <ResetCard onDone={() => setScreen("login")} />}
       {screen === "pending" && <PendingCard />}
@@ -124,7 +125,7 @@ function AuthShell({ title, description, children }: { title: string; descriptio
   );
 }
 
-function LoginCard({ onForgot }: { onForgot: () => void }) {
+function LoginCard({ onRegister, onForgot }: { onRegister: () => void; onForgot: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -158,11 +159,67 @@ function LoginCard({ onForgot }: { onForgot: () => void }) {
           {busy ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <div className="mt-4 flex justify-end text-sm">
+      <div className="mt-4 flex justify-between text-sm">
+        <button onClick={onRegister} className="text-accent hover:underline">
+          Create an account
+        </button>
         <button onClick={onForgot} className="text-muted-foreground hover:underline">
           Forgot password?
         </button>
       </div>
+    </AuthShell>
+  );
+}
+
+function RegisterCard({ onBack }: { onBack: () => void }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (password !== confirm) return toast.error("Passwords don't match");
+    setBusy(true);
+    const { error } = await supabase.auth.signUp({ email, password });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setDone(true);
+  }
+
+  if (done) {
+    return (
+      <AuthShell title="Check your email" description="Confirm your address, then sign in — an existing admin will need to approve your account before you can make changes.">
+        <Button variant="outline" className="w-full" onClick={onBack}>
+          Back to login
+        </Button>
+      </AuthShell>
+    );
+  }
+
+  return (
+    <AuthShell title="Create admin account" description="You won't be able to change anything until an existing admin approves you.">
+      <form onSubmit={submit} className="grid gap-3">
+        <div className="grid gap-1.5">
+          <Label>Email</Label>
+          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Password</Label>
+          <Input type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
+        </div>
+        <div className="grid gap-1.5">
+          <Label>Confirm password</Label>
+          <Input type="password" minLength={6} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+        </div>
+        <Button type="submit" disabled={busy} className="mt-1">
+          {busy ? "Creating…" : "Register"}
+        </Button>
+      </form>
+      <button onClick={onBack} className="mt-4 text-sm text-muted-foreground hover:underline">
+        Back to login
+      </button>
     </AuthShell>
   );
 }
@@ -939,7 +996,8 @@ function AdminsPanel({ currentUserId }: { currentUserId: string }) {
         <CardHeader>
           <CardTitle className="font-display text-base uppercase tracking-wide">Admin accounts</CardTitle>
           <CardDescription>
-            Full access. There's no self-registration — the only way to create a new admin account is right here.
+            Full access. New admins can self-register at the /admin login screen (pending until approved below), or
+            you can create an already-approved account directly here.
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">

@@ -493,3 +493,14 @@ club's page (the full list below it already had this). Nothing about
 the nav changed — Scoreboard and Clubs remain two separate items in the
 menu, this is just adding a cross-link between them where a scorer's
 club is mentioned.
+
+## Self-registration restored for /admin (matchcom still locked down) (4 Sep)
+
+Reversed the /admin half of the previous "remove self-registration"
+change — "Create an account" is back on the admin login screen,
+creating a pending account that still needs an existing admin's
+approval (same flow as before that round). `/matchcom` is untouched —
+still no self-registration there, still admin-created-only. If you
+change your mind again, this is a small, self-contained flip in
+`src/routes/admin.tsx` (LoginCard/RegisterCard + the Screen type) — say
+the word.
