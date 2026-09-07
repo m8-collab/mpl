@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { leagueQuery } from "@/lib/league";
 import { PageHeader } from "@/components/league/PageHeader";
+import { SupportLeagueCard } from "@/components/league/SupportLeague";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -50,6 +51,10 @@ function AboutPage() {
           The league is organised by the Mtwapa Premier community organising committee, with results, scorers and photos
           submitted by club officials after each matchday.
         </Block>
+      </div>
+
+      <div className="mt-6">
+        <SupportLeagueCard />
       </div>
     </div>
   );

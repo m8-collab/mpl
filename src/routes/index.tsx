@@ -4,6 +4,7 @@ import { leagueQuery, liveRefetchInterval, isPlayed } from "@/lib/league";
 import { StandingsTable } from "@/components/league/StandingsTable";
 import { MatchCard } from "@/components/league/MatchCard";
 import { ClubBadge } from "@/components/league/ClubBadge";
+import { SupportLeagueCard } from "@/components/league/SupportLeague";
 import heroImage from "@/assets/hero-match.jpg";
 
 export const Route = createFileRoute("/")({
@@ -160,6 +161,8 @@ function Index() {
                 Make your picks
               </Link>
             </div>
+
+            <SupportLeagueCard variant="dark" />
           </aside>
         </div>
       </section>

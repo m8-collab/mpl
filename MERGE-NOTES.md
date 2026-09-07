@@ -512,3 +512,13 @@ more players are tied on goals, they now sort A-Z by name instead of in
 arbitrary/insertion order. Applied both on the Scoreboard page itself
 and at the database query level, so the homepage's top-scorers preview
 gets the same consistent ordering for free.
+
+## Support the League (M-Pesa) (7 Sep)
+
+New `SupportLeagueCard` component showing the Lipa na M-Pesa paybill
+details from the Sidian Express card you provided (Paybill 111999,
+Account 344166, Account name "Mtwapa Premier CBO") — no schema change,
+this is static display content. Shown in two places: the homepage's
+fan-zone sidebar (dark/pitch-panel style) and the About page (light
+card, placed right after "Who runs it", since that's where visitors
+already are reading about who organizes the league).
