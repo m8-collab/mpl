@@ -25,7 +25,7 @@ function ScoreboardPage() {
   const scorers = (data?.scorers ?? [])
     .filter((s) => !activeSeason || !s.season || s.season === activeSeason)
     .slice()
-    .sort((a, b) => b.goals - a.goals);
+    .sort((a, b) => b.goals - a.goals || a.player_name.localeCompare(b.player_name));
   const podium = scorers.slice(0, 3);
 
   function photoFor(s: (typeof scorers)[number]): string | null {

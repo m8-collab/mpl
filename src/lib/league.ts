@@ -353,7 +353,7 @@ export async function fetchLeague(): Promise<LeagueData> {
     supabase.from("clubs").select("*").order("name"),
     supabase.from("table_rows").select("*"),
     supabase.from("fixtures").select("*").order("date"),
-    supabase.from("scorers").select("*").order("goals", { ascending: false }),
+    supabase.from("scorers").select("*").order("goals", { ascending: false }).order("player_name"),
     supabase.from("squads").select("*").order("player_name"),
     supabase.from("news").select("*").order("created_at", { ascending: false }),
     supabase.from("albums").select("*").order("sort_order"),

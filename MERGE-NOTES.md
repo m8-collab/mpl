@@ -504,3 +504,11 @@ still no self-registration there, still admin-created-only. If you
 change your mind again, this is a small, self-contained flip in
 `src/routes/admin.tsx` (LoginCard/RegisterCard + the Screen type) — say
 the word.
+
+## Scoreboard ties broken alphabetically (4 Sep)
+
+Scoreboard stays ranked by goals (podium/leader unchanged) — when two or
+more players are tied on goals, they now sort A-Z by name instead of in
+arbitrary/insertion order. Applied both on the Scoreboard page itself
+and at the database query level, so the homepage's top-scorers preview
+gets the same consistent ordering for free.
