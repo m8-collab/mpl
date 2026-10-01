@@ -6,6 +6,8 @@ export function MatchCard({ fixture, data }: { fixture: Fixture; data: LeagueDat
   const home = fixture.home_id ? data.clubMap[fixture.home_id] : undefined;
   const away = fixture.away_id ? data.clubMap[fixture.away_id] : undefined;
   const played = fixture.home_score !== null && fixture.away_score !== null;
+  const fixtureGoals = data.goals.filter((g) => g.fixture_id === fixture.id).sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0));
+  const fixtureCards = data.cards.filter((c) => c.fixture_id === fixture.id);
 
   return (
     <article className={`surface-card p-4 ${fixture.postponed ? "opacity-90 ring-1 ring-destructive/40" : ""}`}>
@@ -28,6 +30,22 @@ export function MatchCard({ fixture, data }: { fixture: Fixture; data: LeagueDat
       {fixture.venue && <p className="mt-3 text-xs text-muted-foreground">{fixture.venue}</p>}
       {fixture.postponed && fixture.postponed_note && (
         <p className="mt-3 border-t border-border pt-3 text-xs text-destructive">{fixture.postponed_note}</p>
+      )}
+      {!fixture.postponed && played && (fixtureGoals.length > 0 || fixtureCards.length > 0) && (
+        <div className="mt-3 grid gap-2 border-t border-border pt-3">
+          {fixtureGoals.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">Scorers:</span>{" "}
+              {fixtureGoals.map((g) => `${g.player_name}${g.minute !== null ? ` ${g.minute}'` : ""}`).join(", ")}
+            </p>
+          )}
+          {fixtureCards.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">Cards:</span>{" "}
+              {fixtureCards.map((c) => `${c.player_name} (${c.card_type === "red" ? "🟥" : "🟨"})`).join(", ")}
+            </p>
+          )}
+        </div>
       )}
       {!fixture.postponed && played && (fixture.match_official || fixture.man_of_the_match) && (
         <div className="mt-3 grid gap-1 border-t border-border pt-3 text-xs text-muted-foreground">

@@ -522,3 +522,20 @@ this is static display content. Shown in two places: the homepage's
 fan-zone sidebar (dark/pitch-panel style) and the About page (light
 card, placed right after "Who runs it", since that's where visitors
 already are reading about who organizes the league).
+
+## Fixed: scorers missing from results and WhatsApp share (30 Sep)
+
+Found the gap: when the Goals feature was added, it was wired into the
+Match Centre detail page but never went back to two other places that
+needed it —
+
+**Fixture results cards** (`MatchCard.tsx`, used on the public Fixtures
+page and homepage) now show a "Scorers:" line and a "Cards:" line
+directly on the result, for anyone who doesn't click through to the
+full Match Centre.
+
+**WhatsApp share** (the button on the match report in MatchCom) now
+includes a "⚽ Scorers:" line with each goal and its minute, pulled from
+the same Goals data as the Scoreboard. Cards were already supposed to
+be included — rebuilt that part of the message alongside the goals fix
+to make sure both are solid, in case the original gap was related.

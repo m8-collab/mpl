@@ -532,6 +532,13 @@ export function MatchOfficialDashboard({
                         `${homeClub?.name ?? "TBC"} ${fixture.home_score} - ${fixture.away_score} ${awayClub?.name ?? "TBC"}`,
                         fixture.venue ? `📍 ${fixture.venue}` : null,
                         `📅 ${fixture.date}`,
+                        goals.length
+                          ? `⚽ Scorers: ${goals
+                              .slice()
+                              .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
+                              .map((g) => `${g.player_name}${g.minute !== null ? ` ${g.minute}'` : ""}`)
+                              .join(", ")}`
+                          : null,
                         fixture.man_of_the_match ? `⭐ Man of the Match: ${fixture.man_of_the_match}` : null,
                         cards.length
                           ? `🟨🟥 Cards: ${cards
