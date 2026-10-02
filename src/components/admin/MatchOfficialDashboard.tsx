@@ -527,18 +527,18 @@ export function MatchOfficialDashboard({
                     variant="outline"
                     disabled={fixture.postponed || fixture.home_score === null || fixture.away_score === null}
                     onClick={() => {
+                      const byMinute = (a: GoalEntry, b: GoalEntry) => (a.minute ?? 0) - (b.minute ?? 0);
+                      const formatGoal = (g: GoalEntry) => `${g.player_name}${g.minute !== null ? ` ${g.minute}'` : ""}`;
+                      const homeGoals = goals.filter((g) => g.club_id === fixture.home_id).sort(byMinute);
+                      const awayGoals = goals.filter((g) => g.club_id === fixture.away_id).sort(byMinute);
+
                       const lines = [
                         `⚽ FULL TIME`,
                         `${homeClub?.name ?? "TBC"} ${fixture.home_score} - ${fixture.away_score} ${awayClub?.name ?? "TBC"}`,
                         fixture.venue ? `📍 ${fixture.venue}` : null,
                         `📅 ${fixture.date}`,
-                        goals.length
-                          ? `⚽ Scorers: ${goals
-                              .slice()
-                              .sort((a, b) => (a.minute ?? 0) - (b.minute ?? 0))
-                              .map((g) => `${g.player_name}${g.minute !== null ? ` ${g.minute}'` : ""}`)
-                              .join(", ")}`
-                          : null,
+                        homeGoals.length ? `⚽ ${homeClub?.name ?? "Home"} scorers: ${homeGoals.map(formatGoal).join(", ")}` : null,
+                        awayGoals.length ? `⚽ ${awayClub?.name ?? "Away"} scorers: ${awayGoals.map(formatGoal).join(", ")}` : null,
                         fixture.man_of_the_match ? `⭐ Man of the Match: ${fixture.man_of_the_match}` : null,
                         cards.length
                           ? `🟨🟥 Cards: ${cards
@@ -546,7 +546,10 @@ export function MatchOfficialDashboard({
                               .join(", ")}`
                           : null,
                         fixture.match_official ? `👤 Match official: ${fixture.match_official}` : null,
-                      ].filter(Boolean);
+                        ``,
+                        `📧 mtwapapremiercbo@gmail.com`,
+                        `🌐 www.mtwapapremierleague.com`,
+                      ].filter((l) => l !== null);
                       const text = lines.join("\n");
                       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
                     }}

@@ -31,6 +31,7 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
   const [players, setPlayers] = useState<SquadPlayer[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [originalClubId, setOriginalClubId] = useState<string | null>(null);
   const [clubId, setClubId] = useState("");
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");
@@ -55,6 +56,7 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
 
   function resetForm() {
     setEditingId(null);
+    setOriginalClubId(null);
     setClubId("");
     setName("");
     setPosition("");
@@ -63,6 +65,7 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
 
   function startEdit(p: SquadPlayer) {
     setEditingId(p.id);
+    setOriginalClubId(p.club_id);
     setClubId(p.club_id ?? "");
     setName(p.player_name);
     setPosition(p.position ?? "");
@@ -94,7 +97,14 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
           : await supabase.from("squads").insert(payload);
       if (error) throw error;
 
-      toast.success(editingId !== null ? "Player saved" : "Player added");
+      const transferred = editingId !== null && originalClubId && originalClubId !== clubId;
+      toast.success(
+        transferred
+          ? `Transferred to ${clubs.find((c) => c.id === clubId)?.name ?? "new club"}`
+          : editingId !== null
+            ? "Player saved"
+            : "Player added",
+      );
       setOpenClubId(clubId);
       resetForm();
       await load();
@@ -131,14 +141,13 @@ export function SquadsManager({ clubs, onChanged }: { clubs: Club[]; onChanged?:
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-3">
             <div className="grid gap-1.5">
-              <Label>Club</Label>
+              <Label>Club {editingId !== null && <span className="font-normal text-muted-foreground">(change to transfer this player)</span>}</Label>
               <Select
                 value={clubId}
                 onValueChange={(v) => {
                   setClubId(v);
                   setOpenClubId(v);
                 }}
-                disabled={editingId !== null}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select club…" />

@@ -539,3 +539,28 @@ includes a "⚽ Scorers:" line with each goal and its minute, pulled from
 the same Goals data as the Scoreboard. Cards were already supposed to
 be included — rebuilt that part of the message alongside the goals fix
 to make sure both are solid, in case the original gap was related.
+
+## Clickable results, player transfers, grouped WhatsApp scorers + contact (1 Oct)
+
+**Results are now fully clickable**: the entire match result card
+(Fixtures page, homepage) navigates to its Match Centre page on click,
+not just the small link at the bottom — that link is still there as a
+visual cue, but tapping anywhere on the card works now. Club-name links
+inside the card still go to the club page as before (click there stops
+it from also triggering the card's own navigation).
+
+**Player transfers**: the Club field in admin's Squads edit form was
+previously locked once you started editing a player — on purpose,
+early on, but it blocked exactly this. It's unlocked now: pick a
+different club while editing and save to transfer the player, with a
+"Transferred to [club]" confirmation instead of the generic "Player
+saved". Past goals, cards, and appearances already have their own
+club_id frozen at the time they were recorded, so a transfer only
+affects where the player appears *going forward* — it doesn't rewrite
+history.
+
+**WhatsApp share — scorers grouped by club, contact added**: the
+scorers line used to be one mixed list; it's now two lines, one per
+club ("⚽ [Home club] scorers: ...", "⚽ [Away club] scorers: ..."). Added
+the league's contact details (mtwapapremiercbo@gmail.com,
+www.mtwapapremierleague.com) as a footer on every shared result.

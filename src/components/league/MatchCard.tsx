@@ -1,8 +1,9 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ClubBadge } from "./ClubBadge";
 import { fmtDate, type Club, type Fixture, type LeagueData } from "@/lib/league";
 
 export function MatchCard({ fixture, data }: { fixture: Fixture; data: LeagueData }) {
+  const navigate = useNavigate();
   const home = fixture.home_id ? data.clubMap[fixture.home_id] : undefined;
   const away = fixture.away_id ? data.clubMap[fixture.away_id] : undefined;
   const played = fixture.home_score !== null && fixture.away_score !== null;
@@ -10,7 +11,10 @@ export function MatchCard({ fixture, data }: { fixture: Fixture; data: LeagueDat
   const fixtureCards = data.cards.filter((c) => c.fixture_id === fixture.id);
 
   return (
-    <article className={`surface-card p-4 ${fixture.postponed ? "opacity-90 ring-1 ring-destructive/40" : ""}`}>
+    <article
+      onClick={() => navigate({ to: "/fixtures/$fixtureId", params: { fixtureId: fixture.id } })}
+      className={`surface-card cursor-pointer p-4 transition-shadow hover:shadow-md ${fixture.postponed ? "opacity-90 ring-1 ring-destructive/40" : ""}`}
+    >
       <div className="flex items-center justify-between">
         <span className="eyebrow text-muted-foreground">{fmtDate(fixture.date)}</span>
         {fixture.postponed ? (
@@ -82,7 +86,12 @@ function Row({ club, score }: { club?: Club | undefined; score: number | null })
   return (
     <div className="flex items-center justify-between gap-3">
       {club ? (
-        <Link to="/clubs/$clubId" params={{ clubId: club.id }} className="min-w-0 hover:text-accent">
+        <Link
+          to="/clubs/$clubId"
+          params={{ clubId: club.id }}
+          onClick={(e) => e.stopPropagation()}
+          className="min-w-0 hover:text-accent"
+        >
           {body}
         </Link>
       ) : (
