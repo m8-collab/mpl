@@ -75,6 +75,11 @@ function ClubPage() {
           <div>
             <p className="eyebrow text-mint">{club.venue ?? "Ground TBC"}</p>
             <h1 className="mt-1 font-display text-3xl font-black lg:text-5xl">{club.name}</h1>
+            {!club.active && (
+              <p className="eyebrow mt-2 inline-block rounded-full bg-destructive/20 px-2 py-0.5 text-destructive-foreground">
+                No longer competing
+              </p>
+            )}
             {row && (
               <p className="mt-2 text-sm text-primary-foreground/75">
                 {ordinal(row.rank)} · {row.pts} pts · {row.p} played · {row.gf}-{row.ga} ({row.gd > 0 ? "+" : ""}

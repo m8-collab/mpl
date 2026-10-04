@@ -19,16 +19,18 @@ export const Route = createFileRoute("/clubs/")({
 function ClubsPage() {
   const { data } = useQuery(leagueQuery);
   const rank = new Map(data?.standings.map((s) => [s.club_id, s.rank]) ?? []);
+  const activeClubs = (data?.clubs ?? []).filter((c) => c.active);
+  const discontinuedClubs = (data?.clubs ?? []).filter((c) => !c.active);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 lg:px-8">
       <PageHeader
-        eyebrow={`${data?.clubs.length ?? ""} clubs`}
+        eyebrow={`${activeClubs.length} clubs`}
         title="The Clubs"
         lead="One league, one table. Tap a club for its squad, ground and league position."
       />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {data?.clubs.map((c) => (
+        {activeClubs.map((c) => (
           <Link
             key={c.id}
             to="/clubs/$clubId"
@@ -46,6 +48,25 @@ function ClubsPage() {
           </Link>
         ))}
       </div>
+
+      {discontinuedClubs.length > 0 && (
+        <div className="mt-10">
+          <p className="eyebrow mb-3 text-muted-foreground">No longer competing</p>
+          <div className="flex flex-wrap gap-2">
+            {discontinuedClubs.map((c) => (
+              <Link
+                key={c.id}
+                to="/clubs/$clubId"
+                params={{ clubId: c.id }}
+                className="flex items-center gap-2 rounded-sm border border-border px-3 py-2 text-sm text-muted-foreground hover:text-accent"
+              >
+                <ClubBadge club={c} size={24} />
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

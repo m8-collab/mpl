@@ -31,6 +31,8 @@ export type FieldDef = {
   placeholder?: string;
   /** Only for type "image" — storage bucket to upload into. Defaults to "gallery". */
   bucket?: string;
+  /** Pre-filled value for a NEW row only — never applied when editing an existing one. */
+  defaultValue?: string;
 };
 
 export type EntityConfig = {
@@ -48,7 +50,7 @@ export type EntityConfig = {
 
 function emptyPayload(fields: FieldDef[]) {
   const p: Record<string, any> = {};
-  fields.forEach((f) => (p[f.name] = ""));
+  fields.forEach((f) => (p[f.name] = f.defaultValue ?? ""));
   return p;
 }
 

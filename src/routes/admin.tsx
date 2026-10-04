@@ -367,8 +367,10 @@ function Dashboard({ session }: { session: Session }) {
       { name: "id", label: "Club ID (slug)", type: "text", required: true, lockOnEdit: true, placeholder: "e.g. komboa" },
       { name: "name", label: "Name", type: "text", required: true },
       { name: "venue", label: "Home venue", type: "text" },
+      { name: "active", label: "Currently competing?", type: "boolean", defaultValue: "true" },
       { name: "crest_url", label: "Crest image URL", type: "text", showInList: false },
     ],
+    booleanFields: ["active"],
   };
 
   const tableConfig: EntityConfig = {

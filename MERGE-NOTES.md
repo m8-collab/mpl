@@ -564,3 +564,30 @@ scorers line used to be one mixed list; it's now two lines, one per
 club ("⚽ [Home club] scorers: ...", "⚽ [Away club] scorers: ..."). Added
 the league's contact details (mtwapapremiercbo@gmail.com,
 www.mtwapapremierleague.com) as a footer on every shared result.
+
+## Kanamai FC discontinued; clubs can now be marked inactive (2 Oct)
+
+One SQL file: `supabase-mpl-reference/club-active-status.sql` — adds
+`clubs.active` (default true) and sets Kanamai FC's to false.
+
+Discontinuing a club doesn't touch their history — past fixtures,
+scorers, cards, squad all stay exactly as they were, still reachable by
+direct link. It only controls whether they show as a CURRENTLY
+competing club: excluded from the standings table (wherever it's shown
+— Table page, homepage, club pages' own position line) and from the
+main Clubs directory grid, which now has a small "No longer competing"
+list at the bottom instead so the club is still findable rather than
+just vanishing. Their own profile page shows a "No longer competing"
+badge next to the name.
+
+This is reusable, not a one-off fix: admin's Clubs tab has a new
+"Currently competing?" toggle, defaulting to Yes for any new club you
+add (added real default-value support to `EntityManager` for this,
+reusable by any future field — previously every new-row field always
+started blank/false regardless of what made sense). Next time a club
+withdraws, it's a toggle in `/admin`, not a message to me.
+
+On purpose, I did NOT filter inactive clubs out of admin's own
+club-picker dropdowns (Fixtures, Scorers, Squads, Table) — doing so
+would have broken editing any of Kanamai's existing historical records,
+since a Select can't show a value that isn't in its own option list.

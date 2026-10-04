@@ -5,6 +5,7 @@ export type Club = {
   name: string;
   venue: string | null;
   crest_url: string | null;
+  active: boolean;
 };
 
 export type TableRowRaw = {
@@ -371,7 +372,7 @@ export async function fetchLeague(): Promise<LeagueData> {
   clubs.forEach((c) => (clubMap[c.id] = c));
 
   const standings = ((rowsRes.data ?? []) as TableRowRaw[])
-    .filter((r) => clubMap[r.club_id])
+    .filter((r) => clubMap[r.club_id]?.active)
     .map((r) => ({
       ...r,
       club: clubMap[r.club_id]!,
