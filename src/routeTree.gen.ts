@@ -12,9 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as MatchcomRouteImport } from './routes/matchcom'
+import { Route as DisciplineRouteImport } from './routes/discipline'
 import { Route as FixturesRouteImport } from './routes/fixtures'
 import { Route as GalleryRouteImport } from './routes/gallery'
+import { Route as MatchcomRouteImport } from './routes/matchcom'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as PredictorRouteImport } from './routes/predictor'
 import { Route as ScoreboardRouteImport } from './routes/scoreboard'
@@ -38,9 +39,9 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MatchcomRoute = MatchcomRouteImport.update({
-  id: '/matchcom',
-  path: '/matchcom',
+const DisciplineRoute = DisciplineRouteImport.update({
+  id: '/discipline',
+  path: '/discipline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FixturesRoute = FixturesRouteImport.update({
@@ -51,6 +52,11 @@ const FixturesRoute = FixturesRouteImport.update({
 const GalleryRoute = GalleryRouteImport.update({
   id: '/gallery',
   path: '/gallery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchcomRoute = MatchcomRouteImport.update({
+  id: '/matchcom',
+  path: '/matchcom',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -84,18 +90,19 @@ const ClubsClubIdRoute = ClubsClubIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const FixturesFixtureIdRoute = FixturesFixtureIdRouteImport.update({
-  id: '/fixtures/$fixtureId',
-  path: '/fixtures/$fixtureId',
-  getParentRoute: () => rootRouteImport,
+  id: '/$fixtureId',
+  path: '/$fixtureId',
+  getParentRoute: () => FixturesRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
-  '/matchcom': typeof MatchcomRoute
-  '/fixtures': typeof FixturesRoute
+  '/discipline': typeof DisciplineRoute
+  '/fixtures': typeof FixturesRouteWithChildren
   '/gallery': typeof GalleryRoute
+  '/matchcom': typeof MatchcomRoute
   '/news': typeof NewsRoute
   '/predictor': typeof PredictorRoute
   '/scoreboard': typeof ScoreboardRoute
@@ -108,9 +115,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
-  '/matchcom': typeof MatchcomRoute
-  '/fixtures': typeof FixturesRoute
+  '/discipline': typeof DisciplineRoute
+  '/fixtures': typeof FixturesRouteWithChildren
   '/gallery': typeof GalleryRoute
+  '/matchcom': typeof MatchcomRoute
   '/news': typeof NewsRoute
   '/predictor': typeof PredictorRoute
   '/scoreboard': typeof ScoreboardRoute
@@ -124,9 +132,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRoute
-  '/matchcom': typeof MatchcomRoute
-  '/fixtures': typeof FixturesRoute
+  '/discipline': typeof DisciplineRoute
+  '/fixtures': typeof FixturesRouteWithChildren
   '/gallery': typeof GalleryRoute
+  '/matchcom': typeof MatchcomRoute
   '/news': typeof NewsRoute
   '/predictor': typeof PredictorRoute
   '/scoreboard': typeof ScoreboardRoute
@@ -141,9 +150,10 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
-    | '/matchcom'
+    | '/discipline'
     | '/fixtures'
     | '/gallery'
+    | '/matchcom'
     | '/news'
     | '/predictor'
     | '/scoreboard'
@@ -156,9 +166,10 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
-    | '/matchcom'
+    | '/discipline'
     | '/fixtures'
     | '/gallery'
+    | '/matchcom'
     | '/news'
     | '/predictor'
     | '/scoreboard'
@@ -171,9 +182,10 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
-    | '/matchcom'
+    | '/discipline'
     | '/fixtures'
     | '/gallery'
+    | '/matchcom'
     | '/news'
     | '/predictor'
     | '/scoreboard'
@@ -187,15 +199,15 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRoute
-  MatchcomRoute: typeof MatchcomRoute
-  FixturesRoute: typeof FixturesRoute
+  DisciplineRoute: typeof DisciplineRoute
+  FixturesRoute: typeof FixturesRouteWithChildren
   GalleryRoute: typeof GalleryRoute
+  MatchcomRoute: typeof MatchcomRoute
   NewsRoute: typeof NewsRoute
   PredictorRoute: typeof PredictorRoute
   ScoreboardRoute: typeof ScoreboardRoute
   TableRoute: typeof TableRoute
   ClubsClubIdRoute: typeof ClubsClubIdRoute
-  FixturesFixtureIdRoute: typeof FixturesFixtureIdRoute
   ClubsIndexRoute: typeof ClubsIndexRoute
 }
 
@@ -222,11 +234,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/matchcom': {
-      id: '/matchcom'
-      path: '/matchcom'
-      fullPath: '/matchcom'
-      preLoaderRoute: typeof MatchcomRouteImport
+    '/discipline': {
+      id: '/discipline'
+      path: '/discipline'
+      fullPath: '/discipline'
+      preLoaderRoute: typeof DisciplineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fixtures': {
@@ -241,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/gallery'
       fullPath: '/gallery'
       preLoaderRoute: typeof GalleryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/matchcom': {
+      id: '/matchcom'
+      path: '/matchcom'
+      fullPath: '/matchcom'
+      preLoaderRoute: typeof MatchcomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news': {
@@ -287,27 +306,39 @@ declare module '@tanstack/react-router' {
     }
     '/fixtures/$fixtureId': {
       id: '/fixtures/$fixtureId'
-      path: '/fixtures/$fixtureId'
+      path: '/$fixtureId'
       fullPath: '/fixtures/$fixtureId'
       preLoaderRoute: typeof FixturesFixtureIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof FixturesRoute
     }
   }
 }
+
+interface FixturesRouteChildren {
+  FixturesFixtureIdRoute: typeof FixturesFixtureIdRoute
+}
+
+const FixturesRouteChildren: FixturesRouteChildren = {
+  FixturesFixtureIdRoute: FixturesFixtureIdRoute,
+}
+
+const FixturesRouteWithChildren = FixturesRoute._addFileChildren(
+  FixturesRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
-  MatchcomRoute: MatchcomRoute,
-  FixturesRoute: FixturesRoute,
+  DisciplineRoute: DisciplineRoute,
+  FixturesRoute: FixturesRouteWithChildren,
   GalleryRoute: GalleryRoute,
+  MatchcomRoute: MatchcomRoute,
   NewsRoute: NewsRoute,
   PredictorRoute: PredictorRoute,
   ScoreboardRoute: ScoreboardRoute,
   TableRoute: TableRoute,
   ClubsClubIdRoute: ClubsClubIdRoute,
-  FixturesFixtureIdRoute: FixturesFixtureIdRoute,
   ClubsIndexRoute: ClubsIndexRoute,
 }
 export const routeTree = rootRouteImport
