@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Facebook, Instagram, Twitter, MessageCircle } from "lucide-react";
+import { Facebook, Instagram, Twitter, MessageCircle, Mail, Globe, Phone } from "lucide-react";
 import { leagueQuery } from "@/lib/league";
+import { LEAGUE_EMAIL, LEAGUE_HASHTAG, LEAGUE_OFFICIALS, LEAGUE_WEBSITE_LABEL, LEAGUE_WEBSITE_URL } from "@/lib/contacts";
 
 export function SiteFooter() {
   const { data } = useQuery(leagueQuery);
@@ -87,10 +88,37 @@ export function SiteFooter() {
           <Link to="/about" className="text-primary-foreground/70 hover:text-mint">
             About
           </Link>
+          <Link to="/about" hash="contact" className="text-primary-foreground/70 hover:text-mint">
+            Contact
+          </Link>
         </div>
 
         <div className="text-left lg:text-right">
-          <p className="eyebrow text-primary-foreground/50">
+          <p className="eyebrow text-primary-foreground/50">Contact the league</p>
+          <ul className="mt-2 grid gap-1.5 text-sm text-primary-foreground/70">
+            <li className="flex items-center gap-2 lg:justify-end">
+              <Mail size={14} className="shrink-0" />
+              <a href={`mailto:${LEAGUE_EMAIL}`} className="break-all hover:text-mint">
+                {LEAGUE_EMAIL}
+              </a>
+            </li>
+            <li className="flex items-center gap-2 lg:justify-end">
+              <Globe size={14} className="shrink-0" />
+              <a href={LEAGUE_WEBSITE_URL} target="_blank" rel="noreferrer noopener" className="hover:text-mint">
+                {LEAGUE_WEBSITE_LABEL}
+              </a>
+            </li>
+            {LEAGUE_OFFICIALS.map((o) => (
+              <li key={o.role} className="flex items-center gap-2 lg:justify-end">
+                <Phone size={14} className="shrink-0" />
+                <a href={`tel:${o.phoneIntl}`} className="hover:text-mint">
+                  <span className="font-semibold text-primary-foreground/85">{o.role}:</span> {o.name} · {o.phoneDisplay}
+                </a>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 font-display text-sm font-extrabold text-mint">{LEAGUE_HASHTAG}</p>
+          <p className="eyebrow mt-3 text-primary-foreground/50">
             Table, fixtures &amp; scorers {data?.asOfLabel ?? ""}
           </p>
           <Link to="/admin" className="mt-2 inline-block text-xs text-primary-foreground/40 hover:text-mint">

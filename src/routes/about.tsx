@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { leagueQuery } from "@/lib/league";
 import { PageHeader } from "@/components/league/PageHeader";
 import { SupportLeagueCard } from "@/components/league/SupportLeague";
+import { Mail, Globe, Phone } from "lucide-react";
+import { LEAGUE_EMAIL, LEAGUE_HASHTAG, LEAGUE_OFFICIALS, LEAGUE_WEBSITE_LABEL, LEAGUE_WEBSITE_URL } from "@/lib/contacts";
 
 export const Route = createFileRoute("/about")({
   head: () => ({
@@ -52,6 +54,37 @@ function AboutPage() {
           submitted by club officials after each matchday.
         </Block>
       </div>
+
+      <section id="contact" className="surface-card mt-6 scroll-mt-24 p-6">
+        <h2 className="font-display text-lg">Contact the league</h2>
+        <p className="mt-1 text-sm font-semibold text-accent">{LEAGUE_HASHTAG}</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {LEAGUE_OFFICIALS.map((o) => (
+            <a
+              key={o.role}
+              href={`tel:${o.phoneIntl}`}
+              className="flex items-center gap-3 rounded-sm border border-border p-3 transition-colors hover:border-accent"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary text-accent">
+                <Phone size={18} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold">{o.name}</span>
+                <span className="eyebrow block text-muted-foreground">{o.role}</span>
+                <span className="block text-sm tabular-nums">{o.phoneDisplay}</span>
+              </span>
+            </a>
+          ))}
+        </div>
+        <div className="mt-4 grid gap-2 border-t border-border pt-4 text-sm">
+          <a href={`mailto:${LEAGUE_EMAIL}`} className="flex items-center gap-2 break-all hover:text-accent">
+            <Mail size={16} className="shrink-0" /> {LEAGUE_EMAIL}
+          </a>
+          <a href={LEAGUE_WEBSITE_URL} target="_blank" rel="noreferrer noopener" className="flex items-center gap-2 hover:text-accent">
+            <Globe size={16} className="shrink-0" /> {LEAGUE_WEBSITE_LABEL}
+          </a>
+        </div>
+      </section>
 
       <div className="mt-6">
         <SupportLeagueCard />
