@@ -591,3 +591,17 @@ On purpose, I did NOT filter inactive clubs out of admin's own
 club-picker dropdowns (Fixtures, Scorers, Squads, Table) — doing so
 would have broken editing any of Kanamai's existing historical records,
 since a Select can't show a value that isn't in its own option list.
+
+## Fall back to recent results when there's nothing upcoming (4 Oct)
+
+**Homepage "Next up"**: when there are no upcoming fixtures, this
+section now shows recent results instead of an empty "No fixtures
+scheduled" message — heading switches to "Recent results" and the
+"All fixtures" link becomes "All results" to match.
+
+**Fixtures page**: the Upcoming/Results tab now defaults to whichever
+one actually has something in it — if every fixture already has a
+result (end of season, or just no upcoming matches scheduled yet), it
+opens on Results instead of landing on an empty Upcoming tab. Clicking
+either tab manually always wins after that — this only affects which
+tab you land on first.

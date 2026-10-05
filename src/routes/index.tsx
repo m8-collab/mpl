@@ -95,10 +95,16 @@ function Index() {
 
             <div className="mt-12 grid gap-8 md:grid-cols-2">
               <div>
-                <SectionHead title="Next up" to="/fixtures" cta="All fixtures" />
+                <SectionHead
+                  title={upcoming.length ? "Next up" : "Recent results"}
+                  to="/fixtures"
+                  cta={upcoming.length ? "All fixtures" : "All results"}
+                />
                 <div className="grid gap-3">
-                  {data && upcoming.map((f) => <MatchCard key={f.id} fixture={f} data={data} />)}
-                  {!upcoming.length && <p className="text-sm text-muted-foreground">No fixtures scheduled.</p>}
+                  {data && (upcoming.length ? upcoming : results).map((f) => <MatchCard key={f.id} fixture={f} data={data} />)}
+                  {!upcoming.length && !results.length && (
+                    <p className="text-sm text-muted-foreground">No fixtures scheduled.</p>
+                  )}
                 </div>
               </div>
               <div>

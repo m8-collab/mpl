@@ -20,17 +20,23 @@ export const Route = createFileRoute("/fixtures")({
 
 function FixturesPage() {
   const { data } = useQuery({ ...leagueQuery, refetchInterval: liveRefetchInterval });
-  const [tab, setTab] = useState<"upcoming" | "results">("upcoming");
+  const [tab, setTab] = useState<"upcoming" | "results" | null>(null);
   const [season, setSeason] = useState<string>("");
 
   const played = (f: Fixture) => f.home_score !== null && f.away_score !== null;
   const seasons = data?.seasons ?? [];
   const activeSeason = season || seasons[seasons.length - 1] || "";
   const bySeasonList = (data?.fixtures ?? []).filter((f) => !activeSeason || !f.season || f.season === activeSeason);
-  const list = bySeasonList.filter((f) => (tab === "results" ? played(f) : !played(f)));
+  // Default to whichever tab actually has something to show — no point
+  // landing on an empty "Upcoming" when the season's over and every
+  // fixture already has a result. A manual tab click always wins after
+  // that, this is only the initial choice.
+  const hasUpcoming = bySeasonList.some((f) => !played(f));
+  const effectiveTab = tab ?? (hasUpcoming ? "upcoming" : "results");
+  const list = bySeasonList.filter((f) => (effectiveTab === "results" ? played(f) : !played(f)));
   const byDate = new Map<string, Fixture[]>();
   list.forEach((f) => byDate.set(f.date, [...(byDate.get(f.date) ?? []), f]));
-  const dates = [...byDate.keys()].sort((a, b) => (tab === "results" ? b.localeCompare(a) : a.localeCompare(b)));
+  const dates = [...byDate.keys()].sort((a, b) => (effectiveTab === "results" ? b.localeCompare(a) : a.localeCompare(b)));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 lg:px-8">
@@ -43,7 +49,7 @@ function FixturesPage() {
               onClick={() => setTab(t)}
               className={cn(
                 "rounded-sm px-4 py-2 font-display text-xs font-bold uppercase tracking-wide",
-                tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+                effectiveTab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t === "upcoming" ? "Upcoming" : "Results"}
