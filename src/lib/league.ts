@@ -367,7 +367,10 @@ export async function fetchLeague(): Promise<LeagueData> {
     supabase.from("goals").select("*").order("created_at", { ascending: false }),
   ]);
 
-  const clubs = (clubsRes.data ?? []) as Club[];
+  // A club only counts as discontinued when `active` is explicitly false.
+  // Treating NULL / a missing column as "inactive" made every club look
+  // discontinued and emptied the league table.
+  const clubs = ((clubsRes.data ?? []) as Club[]).map((c) => ({ ...c, active: c.active !== false }));
   const clubMap: Record<string, Club> = {};
   clubs.forEach((c) => (clubMap[c.id] = c));
 
