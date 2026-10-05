@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useChildMatches } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { leagueQuery, liveRefetchInterval, fmtLongDate, type Fixture } from "@/lib/league";
@@ -22,6 +22,10 @@ function FixturesPage() {
   const { data } = useQuery({ ...leagueQuery, refetchInterval: liveRefetchInterval });
   const [tab, setTab] = useState<"upcoming" | "results" | null>(null);
   const [season, setSeason] = useState<string>("");
+  // /fixtures/$fixtureId is a child of this route. Without rendering the
+  // child, clicking a match changed the URL but the list stayed on screen,
+  // so the match report page never appeared.
+  const childMatches = useChildMatches();
 
   const played = (f: Fixture) => f.home_score !== null && f.away_score !== null;
   const seasons = data?.seasons ?? [];
@@ -37,6 +41,8 @@ function FixturesPage() {
   const byDate = new Map<string, Fixture[]>();
   list.forEach((f) => byDate.set(f.date, [...(byDate.get(f.date) ?? []), f]));
   const dates = [...byDate.keys()].sort((a, b) => (effectiveTab === "results" ? b.localeCompare(a) : a.localeCompare(b)));
+
+  if (childMatches.length > 0) return <Outlet />;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 lg:px-8">

@@ -68,6 +68,7 @@ export function MatchCard({ fixture, data }: { fixture: Fixture; data: LeagueDat
       <Link
         to="/fixtures/$fixtureId"
         params={{ fixtureId: fixture.id }}
+        onClick={(e) => e.stopPropagation()}
         className="mt-3 block border-t border-border pt-3 text-center text-xs font-bold uppercase tracking-wide text-accent hover:underline"
       >
         Match report, centre & squads →
