@@ -43,7 +43,7 @@ export type EntityConfig = {
   /** Fields whose form value ("true"/"false" string) should be stored as an actual boolean. */
   booleanFields?: string[];
   /** Called right before insert to fill in derived fields, e.g. fixtures.id from match_no. */
-  beforeInsert?: (payload: Record<string, any>) => Record<string, any>;
+  beforeInsert?: (payload: Record<string, any>) => Record<string, any> | Promise<Record<string, any>>;
   orderBy?: { column: string; ascending?: boolean };
   rowLabel?: (row: Record<string, any>) => string;
 };
@@ -144,7 +144,7 @@ export function EntityManager({
       }
       ({ error } = await supabase.from(config.table).update(clean).eq(config.primaryKey, editingId));
     } else {
-      if (config.beforeInsert) clean = config.beforeInsert(clean);
+      if (config.beforeInsert) clean = await config.beforeInsert(clean);
       ({ error } = await supabase.from(config.table).insert(clean));
     }
 
