@@ -368,7 +368,7 @@ function Dashboard({ session }: { session: Session }) {
       { name: "name", label: "Name", type: "text", required: true },
       { name: "venue", label: "Home venue", type: "text" },
       { name: "active", label: "Currently competing?", type: "boolean", defaultValue: "true" },
-      { name: "crest_url", label: "Crest image URL", type: "text", showInList: false },
+      { name: "crest_url", label: "Club crest (upload image)", type: "image", showInList: false },
     ],
     booleanFields: ["active"],
   };
